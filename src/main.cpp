@@ -2,6 +2,7 @@
 #include "include/router.hpp"
 #include "include/server.hpp"
 #include <iostream>
+#include <print>
 
 int32_t main()
 {
@@ -15,7 +16,7 @@ int32_t main()
         response.set_header("Content-Length", "text/plain");
     });
 
-    std::cout << "Server is running at 127.0.0.1:8000" << std::endl;
+    std::println("Server is running at 127.0.0.1:8080");
 
     server.start();
 }
