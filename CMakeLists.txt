@@ -4,9 +4,13 @@ project(Server CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 
-file(GLOB SRC "src/*.cpp")
-
-add_executable(server ${SRC})
+add_executable(server 
+    src/http.cpp
+    src/router.cpp
+    src/main.cpp
+    src/server.cpp
+    src/tpool.cpp
+)
 
 set(CMAKE_BUILD_TYPE Debug)
 

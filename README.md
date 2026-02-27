@@ -6,9 +6,10 @@
 - The project is build using LLVM (Clang++), C++23 and Boost.Asio
 - It supports only one client at current period, planned to be extended with thread pool and coroutines in future
 - In future will support regex parsing of routing and static file serving
+- Added thread pool support (25 clients maximum)
 
 ### TODO
-- Segfaults after displaying message on client connection. Possibly buffering mismanagement in server implementation
+- Segfaults after displaying message on client connection. Possibly buffering mismanagement in server implementation (Fixed ✅)
 
 - To download, build and run application:
 ```

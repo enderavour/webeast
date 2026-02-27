@@ -1,7 +1,20 @@
 #include "include/router.hpp"
 #include "include/http.hpp"
 
-Router::Router() = default;
+Router::Router()
+{
+    m_notFoundHandler = [](const Request<std::string>&, Response<std::string> &res)
+    {
+        res.set_status_code(HttpStatus::NotFound);
+        res.set_body("404 Not Found");
+    };
+
+    m_notAllowedHandler = [](const Request<std::string>&, Response<std::string> &res)
+    {
+        res.set_status_code(HttpStatus::MethodNotAllowed);
+        res.set_body("405 Not Allowed");
+    };
+}
 
 void Router::register_handler(const std::string &path, HttpMethods method, CallbackHandler &&callback)
 {
@@ -57,8 +70,13 @@ bool Router::dispatch(const Request<std::string> &req, Response<std::string> &re
 CallbackHandler Router::get_handler(const std::string &path, HttpMethods method) const
 {
     auto callbacks_it = m_Callbacks.find(path);
-    auto callbacks_set = callbacks_it->second;
+    if (callbacks_it == m_Callbacks.end())
+        return m_notFoundHandler;
 
-    auto callback = callbacks_set.find(method);
-    return callback->second;
+    const auto &method_map = callbacks_it->second;
+    auto method_it = method_map.find(method);
+    if (method_it == method_map.end())
+        return m_notAllowedHandler;
+
+    return method_it->second;
 }

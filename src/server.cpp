@@ -1,18 +1,17 @@
 #include "include/server.hpp"
 #include <iostream>
 #include <boost/system/error_code.hpp>
-
 using boost::asio::ip::make_address;
 
 ServerInstance::ServerInstance(const std::string &addr, int32_t port): 
 m_Addr(addr), m_Port(port), m_AsioCTX(1), m_Acceptor(m_AsioCTX, tcp::endpoint(
-    make_address(addr), port)) {}
+    make_address(addr), port)), m_Pool(CLIENTS_MAX_CAPACITY) {}
 
-ServerInstance::ServerInstance(const std::string &addr, int32_t port, Router &router):
+ServerInstance::ServerInstance(const std::string &addr, int32_t port, Router router):
 m_Router(router), m_Addr(addr), m_Port(port), m_Acceptor(m_AsioCTX, tcp::endpoint(
-    make_address(addr), port)) {}
+    make_address(addr), port)), m_Pool(CLIENTS_MAX_CAPACITY) {}
 
-void ServerInstance::include_router(Router &router)
+void ServerInstance::include_router(Router router)
 {
     m_Router = router;
 }
@@ -37,20 +36,25 @@ void ServerInstance::start()
 {
     while (true)
     {
-        tcp::socket socket(m_AsioCTX);
-        m_Acceptor.accept(socket);
+        auto socket = std::make_shared<tcp::socket>(m_AsioCTX);
+        m_Acceptor.accept(*socket);
 
-        process_connection(std::move(socket));
+        if (m_Pool.active_tasks_count() + 1 >= CLIENTS_MAX_CAPACITY)
+            socket->close();
+
+        m_Pool.add_task([this, socket = std::move(socket)]() {
+            process_connection(std::move(socket));
+        });
     }
 }
 
-void ServerInstance::process_connection(tcp::socket socket)
+void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
 {
     Response<std::string> response;
     try
     {
         boost::asio::streambuf buffer;
-        boost::asio::read_until(socket, buffer, "\r\n\r\n");
+        boost::asio::read_until(*socket, buffer, "\r\n\r\n");
 
         std::istream request_stream(&buffer);
 
@@ -84,7 +88,7 @@ void ServerInstance::process_connection(tcp::socket socket)
             std::size_t remaining = content_length - body.size();
             std::vector<char> tmp(remaining);
 
-            boost::asio::read(socket, boost::asio::buffer(tmp));
+            boost::asio::read(*socket, boost::asio::buffer(tmp));
             body.append(tmp.data(), remaining);
         }
 
@@ -94,12 +98,12 @@ void ServerInstance::process_connection(tcp::socket socket)
         handler(request, response);
 
         auto response_payload = serialize_response(response);
-        boost::asio::write(socket, boost::asio::buffer(response_payload));
+        boost::asio::write(*socket, boost::asio::buffer(response_payload));
 
         // Temporary test shutdown
         boost::system::error_code ec;
-        socket.shutdown(tcp::socket::shutdown_both, ec);
-        socket.close(ec);
+        socket->shutdown(tcp::socket::shutdown_both, ec);
+        socket->close(ec);
     }
     catch (const std::exception &e)
     {
