@@ -10,6 +10,8 @@ add_executable(server
     src/main.cpp
     src/server.cpp
     src/tpool.cpp
+    src/static.cpp
+    src/defs.cpp
 )
 
 set(CMAKE_BUILD_TYPE Debug)

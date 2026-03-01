@@ -1,8 +1,8 @@
 #include "include/server.hpp"
 #include "include/tpool.hpp"
+#include "include/defs.hpp"
 
-ThreadPool::ThreadPool(int32_t worker_capacity = CLIENTS_MAX_CAPACITY)
-
+ThreadPool::ThreadPool(int32_t worker_capacity = defaults::CLIENTS_MAX_CAPACITY)
 {
     m_Workers.emplace_back([this] {
         while (true)

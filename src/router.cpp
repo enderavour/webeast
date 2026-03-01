@@ -1,19 +1,11 @@
 #include "include/router.hpp"
 #include "include/http.hpp"
+#include "include/defs.hpp"
 
 Router::Router()
 {
-    m_notFoundHandler = [](const Request<std::string>&, Response<std::string> &res)
-    {
-        res.set_status_code(HttpStatus::NotFound);
-        res.set_body("404 Not Found");
-    };
-
-    m_notAllowedHandler = [](const Request<std::string>&, Response<std::string> &res)
-    {
-        res.set_status_code(HttpStatus::MethodNotAllowed);
-        res.set_body("405 Not Allowed");
-    };
+    m_notFoundHandler = defaults::default_404_handler;
+    m_notAllowedHandler = defaults::default_405_handler;
 }
 
 void Router::register_handler(const std::string &path, HttpMethods method, CallbackHandler &&callback)

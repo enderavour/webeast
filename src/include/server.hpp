@@ -7,8 +7,6 @@
 #include "tpool.hpp"
 #include <memory>
 
-static constexpr int32_t CLIENTS_MAX_CAPACITY = 25;
-
 using boost::asio::ip::tcp;
 
 class ServerInstance

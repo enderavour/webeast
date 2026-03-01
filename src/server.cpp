@@ -1,15 +1,16 @@
 #include "include/server.hpp"
 #include <iostream>
 #include <boost/system/error_code.hpp>
+#include "include/defs.hpp"
 using boost::asio::ip::make_address;
 
 ServerInstance::ServerInstance(const std::string &addr, int32_t port): 
 m_Addr(addr), m_Port(port), m_AsioCTX(1), m_Acceptor(m_AsioCTX, tcp::endpoint(
-    make_address(addr), port)), m_Pool(CLIENTS_MAX_CAPACITY) {}
+    make_address(addr), port)), m_Pool(defaults::CLIENTS_MAX_CAPACITY) {}
 
 ServerInstance::ServerInstance(const std::string &addr, int32_t port, Router router):
 m_Router(router), m_Addr(addr), m_Port(port), m_Acceptor(m_AsioCTX, tcp::endpoint(
-    make_address(addr), port)), m_Pool(CLIENTS_MAX_CAPACITY) {}
+    make_address(addr), port)), m_Pool(defaults::CLIENTS_MAX_CAPACITY) {}
 
 void ServerInstance::include_router(Router router)
 {
@@ -39,7 +40,7 @@ void ServerInstance::start()
         auto socket = std::make_shared<tcp::socket>(m_AsioCTX);
         m_Acceptor.accept(*socket);
 
-        if (m_Pool.active_tasks_count() + 1 >= CLIENTS_MAX_CAPACITY)
+        if (m_Pool.active_tasks_count() + 1 >= defaults::CLIENTS_MAX_CAPACITY)
             socket->close();
 
         m_Pool.add_task([this, socket = std::move(socket)]() {
