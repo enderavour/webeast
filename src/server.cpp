@@ -33,6 +33,22 @@ void ServerInstance::post(const std::string &path, CallbackHandler &&handler)
     );
 }
 
+void ServerInstance::put(const std::string &path, CallbackHandler &&handler)
+{
+    m_Router.register_handler(
+        path, HttpMethods::PUT, 
+        std::forward<CallbackHandler>(handler)
+    );
+}
+
+void ServerInstance::_delete(const std::string &path, CallbackHandler &&handler)
+{
+    m_Router.register_handler(
+        path, HttpMethods::DELETE,
+        std::forward<CallbackHandler>(handler)
+    );
+}
+
 void ServerInstance::start()
 {
     while (true)

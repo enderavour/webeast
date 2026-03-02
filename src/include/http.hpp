@@ -9,6 +9,8 @@ enum class HttpMethods
 {
     GET,
     POST,
+    PUT,
+    DELETE,
     UNKNOWN
 };
 
@@ -47,7 +49,7 @@ public:
     
     void set_status_code(HttpStatus code);
     void set_header(const std::string &key, const std::string &value);
-    void set_body(T &&body);
+    void set_body(const T &body);
 
     HttpStatus get_status_code() const;
     std::map<std::string, std::string> get_headers() const;

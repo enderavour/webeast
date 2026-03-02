@@ -15,4 +15,12 @@ private:
     std::filesystem::path static_dir_path;
 };
 
+#define STATIC(var, fname) \
+    [&var](const Request<std::string> &request, Response<std::string> &response) \ 
+    { \
+        response.set_status_code(HttpStatus::OK); \
+        response.set_body(static_dir.get_file(fname).value_or("<h2>Static dir error</h2>")); \
+        response.set_header("Content-Type", "text/html"); \
+    } \
+
 #endif

@@ -31,7 +31,7 @@ void Response<T>::set_header(const std::string &key, const std::string &value)
 
 template<class T>
 requires std::is_convertible_v<T, std::string>
-void Response<T>::set_body(T &&body) 
+void Response<T>::set_body(const T &body) 
 {
     m_Body = body;
 }
@@ -70,7 +70,9 @@ HttpMethods convert_method(const std::string &method)
 {
     const std::unordered_map<std::string, HttpMethods> methods_map = {
         {"GET", HttpMethods::GET},
-        {"POST", HttpMethods::POST}
+        {"POST", HttpMethods::POST},
+        {"PUT", HttpMethods::PUT},
+        {"DELETE", HttpMethods::DELETE}
     };
 
     auto http_method = methods_map.find(method);

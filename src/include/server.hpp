@@ -18,6 +18,8 @@ public:
     void include_router(Router router);
     void get(const std::string &path, CallbackHandler &&handler);
     void post(const std::string &path, CallbackHandler &&handler);
+    void put(const std::string &path, CallbackHandler &&handler);
+    void _delete(const std::string &path, CallbackHandler &&handler);
     void start();
 private:
     Router m_Router;

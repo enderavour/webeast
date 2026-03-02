@@ -1,6 +1,7 @@
 # webeast - Backend for future webpage, built with C++23
 
 ## ATTENTION! The project is not production ready yet. Currently it's built to minimal MVP. 
+## This branch is the development branch, code pushed here is not compileable.
 
 ### Description
 - The project is build using LLVM (Clang++), C++23 and Boost.Asio

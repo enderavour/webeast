@@ -13,16 +13,15 @@ int32_t main()
 
     Router router;
     server.include_router(router);
-    server.get("/", [&static_dir](const Request<std::string> &request, Response<std::string> &response){
-        response.set_status_code(HttpStatus::OK);
-        response.set_body(std::move(static_dir.get_file("index.html").value_or("<h2>Static dir error</h2>")));
-        response.set_header("Content-Type", "text/html");
+    server.get("/", STATIC(static_dir, "index.html"));
+    server.get("/pic", STATIC(static_dir, "pic.html"));
+    /* Not ready yet
+    server.put("/", [&static_dir](const Request<std::string> &request, Response<std::string> &response) {
+        std::println("{}", request.m_Headers.find("Sec-Fetch-Dest")->second);
+        response.set_body(request.m_Body);
+        response.set_header("Content-Type", "text/plain");
     });
-    server.get("/pic", [&static_dir](const Request<std::string> &request, Response<std::string> &response){
-        response.set_status_code(HttpStatus::OK);
-        response.set_body(std::move(static_dir.get_file("pic.html").value_or("<h2>Static dir error</h2>")));
-        response.set_header("Content-Type", "text/html");
-    });
+    */
 
     std::println("Server is running at 127.0.0.1:8080");
 
