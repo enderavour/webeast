@@ -10,12 +10,12 @@
 - Added static file serving, static HTML pages
 - Fixed body parsing on PUT, POST requests
 - Added PUT, DELETE requests
+- Added keep-alive support 
 
 ### TODO
 - Add regex parsing of path arguments, e.g. /path/{} 
-- Add keep-alive supports
-
-
+- Fix system errors 32 and 104 in keep-alive implementation
+- Fix multiple handling of client request
 
 To download, build and run application:
 ```

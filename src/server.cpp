@@ -2,6 +2,7 @@
 #include <iostream>
 #include <boost/system/error_code.hpp>
 #include "include/defs.hpp"
+#include <print>
 using boost::asio::ip::make_address;
 
 ServerInstance::ServerInstance(const std::string &addr, int32_t port): 
@@ -71,48 +72,75 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
     try
     {
         boost::asio::streambuf buffer;
-        boost::asio::read_until(*socket, buffer, "\r\n\r\n");
-
-        std::string data(
-            boost::asio::buffers_begin(buffer.data()),
-            boost::asio::buffers_end(buffer.data())
-        );
-
-        auto pos = data.find("\r\n\r\n");
-        if (pos == std::string::npos)
-            throw std::runtime_error("Invalid HTTP request");
-
-        std::string header_part = data.substr(0, pos + 4);
-        std::string body_part = data.substr(pos + 4);
-
-        auto request = deserialize_request(header_part);
-
-        std::size_t content_length = 0;
-        auto it = request.m_Headers.find("Content-Length");
-        if (it != request.m_Headers.end())
-            content_length = std::stoul(it->second);
-
-        std::string body = body_part;
-
-        if (body.size() < content_length)
+        while (true)
         {
-            std::vector<char> tmp(content_length - body.size());
-            boost::asio::read(*socket, boost::asio::buffer(tmp));
-            body.append(tmp.data(), tmp.size());
+            boost::system::error_code ec;
+            boost::asio::read_until(*socket, buffer, "\r\n\r\n", ec);
+
+            if (ec == boost::asio::error::eof)
+                break;
+            
+            if (ec)
+                throw boost::system::system_error(ec);
+
+            std::string data(
+                boost::asio::buffers_begin(buffer.data()),
+                boost::asio::buffers_end(buffer.data())
+            );
+
+            auto pos = data.find("\r\n\r\n");
+            if (pos == std::string::npos)
+                throw std::runtime_error("Invalid HTTP request");
+
+            std::string header_part = data.substr(0, pos + 4);
+            std::string body_part = data.substr(pos + 4);
+
+            auto request = deserialize_request(header_part);
+
+            std::size_t content_length = 0;
+            auto it = request.m_Headers.find("Content-Length");
+            if (it != request.m_Headers.end())
+                content_length = std::stoul(it->second);
+
+            std::string body = body_part;
+
+            if (body.size() < content_length)
+            {
+                std::vector<char> tmp(content_length - body.size());
+                boost::asio::read(*socket, boost::asio::buffer(tmp));
+                body.append(tmp.data(), tmp.size());
+            }
+
+            request.m_Body = std::move(body);
+
+            buffer.consume((pos + 4) + body.size());
+
+            auto handler = m_Router.get_handler(request.m_Path, request.m_Method);
+            handler(request, response);
+
+            response.set_header("Connection", "keep-alive");
+            response.set_header("Content-Length", std::to_string(response.get_body().size()));
+
+            auto response_payload = serialize_response(response);
+            boost::system::error_code ec;
+            boost::asio::write(*socket, boost::asio::buffer(response_payload));
+            if (ec)
+            {
+                if (ec == boost::asio::error::connection_reset)
+                {
+                    std::println("Client resetted the connection");
+                }
+                else
+                {
+                    std::println("Connection error occured: {}", ec.message());
+                }
+            }
+
+            auto it_conn = request.m_Headers.find("Connection");
+            if (it_conn != request.m_Headers.end() && it_conn->second == "close")
+                break;
         }
-
-        request.m_Body = std::move(body);
-
-        auto handler = m_Router.get_handler(request.m_Path, request.m_Method);
-        handler(request, response);
-
-        auto response_payload = serialize_response(response);
-        boost::asio::write(*socket, boost::asio::buffer(response_payload));
-
-        // Temporary test shutdown
-        boost::system::error_code ec;
-        socket->shutdown(tcp::socket::shutdown_both, ec);
-        socket->close(ec);
+        socket->close();
     }
     catch (const std::exception &e)
     {
