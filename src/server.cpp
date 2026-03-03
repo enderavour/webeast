@@ -76,11 +76,9 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
         std::istream request_stream(&buffer);
 
         std::string headers;
-        {
-            std::ostringstream ss;
-            ss << request_stream.rdbuf();
-            headers = ss.str();
-        }
+        std::ostringstream ss;
+        ss << request_stream.rdbuf();
+        headers = ss.str();
 
         auto request = deserialize_request(headers);
 
