@@ -122,7 +122,6 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
             response.set_header("Content-Length", std::to_string(response.get_body().size()));
 
             auto response_payload = serialize_response(response);
-            boost::system::error_code ec;
             boost::asio::write(*socket, boost::asio::buffer(response_payload));
             if (ec)
             {
