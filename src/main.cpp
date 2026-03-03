@@ -17,6 +17,17 @@ int32_t main()
     server.get("/", STATIC(static_dir, "index.html"));
     server.get("/pic", STATIC(static_dir, "pic.html"));
     server.put("/", [&static_dir](const Request<std::string> &request, Response<std::string> &response) {
+        std::println("Body response: {}", request.m_Body);
+        
+        response.set_status_code(HttpStatus::OK);
+        response.set_body(request.m_Body);
+        response.set_header("Content-Type", "text/plain");
+    });
+    server.get("/form", STATIC(static_dir, "form.html"));
+    server.post("/user", [&static_dir](const Request<std::string> &request, Response<std::string> &response) {
+        std::println("Body after filling the form: {}", request.m_Body);
+        
+        response.set_status_code(HttpStatus::OK);
         response.set_body(request.m_Body);
         response.set_header("Content-Type", "text/plain");
     });

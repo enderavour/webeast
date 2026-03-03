@@ -73,38 +73,32 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
         boost::asio::streambuf buffer;
         boost::asio::read_until(*socket, buffer, "\r\n\r\n");
 
-        std::istream request_stream(&buffer);
+        std::string data(
+            boost::asio::buffers_begin(buffer.data()),
+            boost::asio::buffers_end(buffer.data())
+        );
 
-        std::string headers;
-        std::ostringstream ss;
-        ss << request_stream.rdbuf();
-        headers = ss.str();
+        auto pos = data.find("\r\n\r\n");
+        if (pos == std::string::npos)
+            throw std::runtime_error("Invalid HTTP request");
 
-        auto request = deserialize_request(headers);
+        std::string header_part = data.substr(0, pos + 4);
+        std::string body_part = data.substr(pos + 4);
+
+        auto request = deserialize_request(header_part);
 
         std::size_t content_length = 0;
         auto it = request.m_Headers.find("Content-Length");
         if (it != request.m_Headers.end())
             content_length = std::stoul(it->second);
 
-        std::string body;
-
-        std::size_t already_buffered = buffer.size();
-
-        if (already_buffered > 0)
-        {
-            std::vector<char> tmp(already_buffered);
-            request_stream.read(tmp.data(), already_buffered);
-            body.append(tmp.data(), request_stream.gcount());
-        }
+        std::string body = body_part;
 
         if (body.size() < content_length)
         {
-            std::size_t remaining = content_length - body.size();
-            std::vector<char> tmp(remaining);
-
+            std::vector<char> tmp(content_length - body.size());
             boost::asio::read(*socket, boost::asio::buffer(tmp));
-            body.append(tmp.data(), remaining);
+            body.append(tmp.data(), tmp.size());
         }
 
         request.m_Body = std::move(body);

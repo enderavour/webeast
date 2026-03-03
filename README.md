@@ -8,11 +8,12 @@
 - In future will support regex parsing of routing and static file serving
 - Added thread pool support (25 clients maximum)
 - Added static file serving, static HTML pages
+- Fixed body parsing on PUT, POST requests
+- Added PUT, DELETE requests
 
 ### TODO
-- Segfaults after displaying message on client connection. Possibly buffering mismanagement in server implementation (Fixed ✅)
 - Add regex parsing of path arguments, e.g. /path/{} 
-
+- Add keep-alive supports
 
 - To download, build and run application:
 ```
