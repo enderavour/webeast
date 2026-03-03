@@ -15,7 +15,9 @@
 - Add regex parsing of path arguments, e.g. /path/{} 
 - Add keep-alive supports
 
-- To download, build and run application:
+
+
+To download, build and run application:
 ```
 git clone https://github.com/enderavour/webeast.git
 cd webeast
