@@ -18,6 +18,7 @@ void ServerInstance::include_router(Router router)
     m_Router = router;
 }
 
+// Static
 void ServerInstance::get(const std::string &path, CallbackHandler &&handler)
 {
     m_Router.register_handler(
@@ -47,6 +48,39 @@ void ServerInstance::_delete(const std::string &path, CallbackHandler &&handler)
     m_Router.register_handler(
         path, HttpMethods::DELETE,
         std::forward<CallbackHandler>(handler)
+    );
+}
+
+// Dynamic
+void ServerInstance::get(const std::string &path, DynamicCallbackHandler &&handler)
+{
+    m_Router.register_dynamic(
+        path, HttpMethods::GET, 
+        std::forward<DynamicCallbackHandler>(handler)
+    );
+}
+
+void ServerInstance::post(const std::string &path, DynamicCallbackHandler &&handler)
+{
+    m_Router.register_dynamic(
+        path, HttpMethods::POST, 
+        std::forward<DynamicCallbackHandler>(handler)
+    );
+}
+
+void ServerInstance::put(const std::string &path, DynamicCallbackHandler &&handler)
+{
+    m_Router.register_dynamic(
+        path, HttpMethods::PUT, 
+        std::forward<DynamicCallbackHandler>(handler)
+    );
+}
+
+void ServerInstance::_delete(const std::string &path, DynamicCallbackHandler &&handler)
+{
+    m_Router.register_dynamic(
+        path, HttpMethods::DELETE,
+        std::forward<DynamicCallbackHandler>(handler)
     );
 }
 
@@ -115,8 +149,21 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
 
             buffer.consume((pos + 4) + body.size());
 
-            auto handler = m_Router.get_handler(request.m_Path, request.m_Method);
-            handler(request, response);
+            boost::smatch _match;
+            auto handler_pair = m_Router.get_handler(request.m_Path, request.m_Method, _match);
+            CallbackHandler static_handler;
+            DynamicCallbackHandler dynamic_handler;
+
+            if (handler_pair.first == 0)
+            {
+                static_handler = std::get<CallbackHandler>(handler_pair.second);
+                static_handler(request, response);
+            }
+            else
+            {
+                dynamic_handler = std::get<DynamicCallbackHandler>(handler_pair.second);
+                dynamic_handler(request, response, _match);
+            }
 
             response.set_header("Connection", "keep-alive");
             response.set_header("Content-Length", std::to_string(response.get_body().size()));

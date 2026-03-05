@@ -1,6 +1,7 @@
 #include "include/router.hpp"
 #include "include/http.hpp"
 #include "include/defs.hpp"
+#include <boost/algorithm/string/replace.hpp>
 
 Router::Router()
 {
@@ -24,6 +25,15 @@ void Router::remove_handler(const std::string &path, HttpMethods method)
 
     if (method_map.empty())
         m_Callbacks.erase(entry);
+}
+
+void Router::register_dynamic(const std::string &path, HttpMethods method, DynamicCallbackHandler &&callback)
+{
+    std::string regex_path = path;
+    boost::replace_all(regex_path, "{", "([^/]+");
+    boost::replace_all(regex_path, "}", ")");
+    regex_path = "^" + regex_path + "$";
+    m_DynamicRoutes.push_back({boost::regex(regex_path), method, callback});
 }
 
 void Router::set_404_handler(CallbackHandler &&callback)
@@ -59,16 +69,33 @@ bool Router::dispatch(const Request<std::string> &req, Response<std::string> &re
     return true;
 }
 
-CallbackHandler Router::get_handler(const std::string &path, HttpMethods method) const
+std::pair<int32_t, std::variant<CallbackHandler, DynamicCallbackHandler>> 
+Router::get_handler(const std::string &path, HttpMethods method, boost::smatch &out_match) const
 {
     auto callbacks_it = m_Callbacks.find(path);
-    if (callbacks_it == m_Callbacks.end())
-        return m_notFoundHandler;
+    if (callbacks_it != m_Callbacks.end())
+    {
+        const auto &method_map = callbacks_it->second;
 
-    const auto &method_map = callbacks_it->second;
-    auto method_it = method_map.find(method);
-    if (method_it == method_map.end())
-        return m_notAllowedHandler;
+        auto method_it = method_map.find(method);
+        if (method_it != method_map.end())
+            return {0, method_it->second};
+        
+        return {0, m_notAllowedHandler};
+    }
+        
+    for (const auto &route: m_DynamicRoutes)
+    {
+        if (route.method != method)
+            continue;
 
-    return method_it->second;
+        boost::smatch match;
+        if (boost::regex_match(path, match, route.pattern))
+        {
+            out_match = match;
+            return {1, route.handler};
+        }
+        out_match = match;
+    }
+    return {0, m_notFoundHandler};
 }

@@ -64,4 +64,6 @@ private:
 Request<std::string> deserialize_request(const std::string &source);
 std::string serialize_response(const Response<std::string> &resp);
 
+#define dynamic_get_match(match, index) match[index].str()
+
 #endif

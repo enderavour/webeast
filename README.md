@@ -11,11 +11,14 @@
 - Fixed body parsing on PUT, POST requests
 - Added PUT, DELETE requests
 - Added keep-alive support 
+- Added support of dynamic path arguments
+- Fixed errors
+
 
 ### TODO
-- Add regex parsing of path arguments, e.g. /path/{} 
-- Fix system errors 32 and 104 in keep-alive implementation
-- Fix multiple handling of client request
+- Add logging
+- Add DBMS
+- Build ORM on top of DBMS
 
 To download, build and run application:
 ```

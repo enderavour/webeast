@@ -16,10 +16,18 @@ public:
     ServerInstance(const std::string &addr, int32_t port);
     ServerInstance(const std::string &addr, int32_t port, Router router);
     void include_router(Router router);
+    // Static
     void get(const std::string &path, CallbackHandler &&handler);
     void post(const std::string &path, CallbackHandler &&handler);
     void put(const std::string &path, CallbackHandler &&handler);
     void _delete(const std::string &path, CallbackHandler &&handler);
+
+    // Dynamic
+    void get(const std::string &path, DynamicCallbackHandler &&handler);
+    void post(const std::string &path, DynamicCallbackHandler &&handler);
+    void put(const std::string &path, DynamicCallbackHandler &&handler);
+    void _delete(const std::string &path, DynamicCallbackHandler &&handler);
+
     void start();
 private:
     Router m_Router;

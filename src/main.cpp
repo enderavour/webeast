@@ -6,6 +6,7 @@
 #include <iostream>
 #include <print>
 #include <new>
+#include <format>
 
 int32_t main()
 {
@@ -31,6 +32,16 @@ int32_t main()
         response.set_body(request.m_Body);
         response.set_header("Content-Type", "text/plain");
     });
+    server.get("/greet/{}", 
+        [](const Request<std::string> &request, Response<std::string> &response, boost::smatch &_match)
+        {
+            auto matched = dynamic_get_match(_match, 1);
+
+            response.set_status_code(HttpStatus::OK);
+            response.set_body(std::format("<h1>Hello, {}!</h1>", matched));
+            response.set_header("Content-Type", "text/html");
+        }
+    );
 
     std::println("Server is running at 127.0.0.1:8080");
 
