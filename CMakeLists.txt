@@ -12,6 +12,7 @@ add_executable(webeast
     src/tpool.cpp
     src/static.cpp
     src/defs.cpp
+    src/logger.cpp
 )
 
 set(CMAKE_BUILD_TYPE Debug)

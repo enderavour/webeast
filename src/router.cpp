@@ -1,10 +1,12 @@
 #include "include/router.hpp"
 #include "include/http.hpp"
 #include "include/defs.hpp"
+#include "include/logger.hpp"
 #include <boost/algorithm/string/replace.hpp>
 
 Router::Router()
 {
+    logger::info("Created Router, filled with default 404/405 callbacks");
     m_notFoundHandler = defaults::default_404_handler;
     m_notAllowedHandler = defaults::default_405_handler;
 }

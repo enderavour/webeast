@@ -2,16 +2,30 @@
 #include <iostream>
 #include <boost/system/error_code.hpp>
 #include "include/defs.hpp"
+#include "include/logger.hpp"
 #include <print>
+#include <format>
 using boost::asio::ip::make_address;
 
 ServerInstance::ServerInstance(const std::string &addr, int32_t port): 
 m_Addr(addr), m_Port(port), m_AsioCTX(1), m_Acceptor(m_AsioCTX, tcp::endpoint(
-    make_address(addr), port)), m_Pool(defaults::CLIENTS_MAX_CAPACITY) {}
+    make_address(addr), port)), m_Pool(defaults::CLIENTS_MAX_CAPACITY) 
+{
+    logger::info(std::format(
+        "Created server with at address {} and port {}. Max connections: {}",
+        addr, port, defaults::CLIENTS_MAX_CAPACITY
+    ));
+}
 
 ServerInstance::ServerInstance(const std::string &addr, int32_t port, Router router):
 m_Router(router), m_Addr(addr), m_Port(port), m_Acceptor(m_AsioCTX, tcp::endpoint(
-    make_address(addr), port)), m_Pool(defaults::CLIENTS_MAX_CAPACITY) {}
+    make_address(addr), port)), m_Pool(defaults::CLIENTS_MAX_CAPACITY) 
+{
+    logger::info(std::format(
+        "Created server with at address {} and port {}. Max connections: {}",
+        addr, port, defaults::CLIENTS_MAX_CAPACITY
+    ));
+}
 
 void ServerInstance::include_router(Router router)
 {

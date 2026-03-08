@@ -13,10 +13,10 @@
 - Added keep-alive support 
 - Added support of dynamic path arguments
 - Fixed errors
+- Added basic minimal logger. Currently just into stdout. Further will be added possibility to specify log files, and enable it by compilation macro
 
 
 ### TODO
-- Add logging
 - Add DBMS
 - Build ORM on top of DBMS
 
