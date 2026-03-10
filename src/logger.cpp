@@ -1,7 +1,10 @@
 #include "include/logger.hpp"
+#include "include/defs.hpp"
 #include <string>
 #include <chrono>
 #include <print>
+
+using defaults::LOG_FILE_HANDLE;
 
 std::string get_time()
 {
@@ -45,25 +48,31 @@ void logger::debug(std::string_view msg)
 // Ostream 
 void logger::info(std::ostream &out, std::string_view msg)
 {
-    out << std::format("{} [INFO] {}", get_time(), msg) << '\n';
+    out << std::format("{} [INFO] {}", get_time(), msg) << std::endl;
 }
 
 void logger::warn(std::ostream &out, std::string_view msg)
 {
-    out << std::format("{} [WARN] {}", get_time(), msg) << '\n';
+    out << std::format("{} [WARN] {}", get_time(), msg) << std::endl;
 }
 
 void logger::error(std::ostream &out, std::string_view msg)
 {
-    out << std::format("{} [ERROR] {}", get_time(), msg) << '\n';  
+    out << std::format("{} [ERROR] {}", get_time(), msg) << std::endl;  
 }
 
 void logger::trace(std::ostream &out, std::string_view msg)
 {
-    out << std::format("{} [TRACE] {}", get_time(), msg) << '\n';
+    out << std::format("{} [TRACE] {}", get_time(), msg) << std::endl;
 }
 
 void logger::debug(std::ostream &out, std::string_view msg)
 {
-    out << std::format("{} [DEBUG] {}", get_time(), msg) << '\n'; 
+    out << std::format("{} [DEBUG] {}", get_time(), msg) << std::endl; 
+}
+
+void logger::open_log_file(const std::filesystem::path &fname)
+{
+    std::filesystem::create_directories(fname.parent_path());
+    LOG_FILE_HANDLE.open(fname, std::ios_base::out);
 }

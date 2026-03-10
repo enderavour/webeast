@@ -16,6 +16,11 @@ m_Addr(addr), m_Port(port), m_AsioCTX(1), m_Acceptor(m_AsioCTX, tcp::endpoint(
         "Created server with at address {} and port {}. Max connections: {}",
         addr, port, defaults::CLIENTS_MAX_CAPACITY
     ));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format(
+        "Created server with at address {} and port {}. Max connections: {}",
+        addr, port, defaults::CLIENTS_MAX_CAPACITY
+    ));
 #endif
 }
 
@@ -25,6 +30,11 @@ m_Router(router), m_Addr(addr), m_Port(port), m_Acceptor(m_AsioCTX, tcp::endpoin
 {
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
+        "Created server with at address {} and port {}. Max connections: {}",
+        addr, port, defaults::CLIENTS_MAX_CAPACITY
+    ));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format(
         "Created server with at address {} and port {}. Max connections: {}",
         addr, port, defaults::CLIENTS_MAX_CAPACITY
     ));
@@ -47,6 +57,10 @@ void ServerInstance::get(const std::string &path, CallbackHandler &&handler)
     logger::info(std::format(
         "Registering GET request at path: {}", path
     ));
+#elifdef LOGGING_ENABLE_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format(
+        "Registering GET request at path: {}", path
+    ));
 #endif
 }
 
@@ -58,6 +72,10 @@ void ServerInstance::post(const std::string &path, CallbackHandler &&handler)
     );
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
+        "Registering POST request at path: {}", path
+    ));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format(
         "Registering POST request at path: {}", path
     ));
 #endif
@@ -73,6 +91,10 @@ void ServerInstance::put(const std::string &path, CallbackHandler &&handler)
     logger::info(std::format(
         "Registering PUT request at path: {}", path
     ));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format(
+        "Registering PUT request at path: {}", path
+    ));
 #endif
 }
 
@@ -84,6 +106,10 @@ void ServerInstance::_delete(const std::string &path, CallbackHandler &&handler)
     );
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
+        "Registering DELETE request at path: {}", path
+    ));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format(
         "Registering DELETE request at path: {}", path
     ));
 #endif
@@ -100,6 +126,10 @@ void ServerInstance::get(const std::string &path, DynamicCallbackHandler &&handl
     logger::info(std::format(
         "Registering dynamic GET request at path: {}", path
     ));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format(
+        "Registering dynamic GET request at path: {}", path
+    ));
 #endif
 }
 
@@ -111,6 +141,10 @@ void ServerInstance::post(const std::string &path, DynamicCallbackHandler &&hand
     );
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
+        "Registering dynamic POST request at path: {}", path
+    ));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format(
         "Registering dynamic POST request at path: {}", path
     ));
 #endif
@@ -126,6 +160,10 @@ void ServerInstance::put(const std::string &path, DynamicCallbackHandler &&handl
     logger::info(std::format(
         "Registering dynamic PUT request at path: {}", path
     ));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format(
+        "Registering dynamic PUT request at path: {}", path
+    ));
 #endif
 }
 
@@ -139,6 +177,10 @@ void ServerInstance::_delete(const std::string &path, DynamicCallbackHandler &&h
     logger::info(std::format(
         "Registering dynamic DELETEs request at path: {}", path
     ));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format(
+        "Registering dynamic DELETEs request at path: {}", path
+    ));
 #endif
 }
 
@@ -150,12 +192,16 @@ void ServerInstance::start()
         m_Acceptor.accept(*socket);
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info("Accepted new client");
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, "Accepted new client");
 #endif
 
         if (m_Pool.active_tasks_count() + 1 >= defaults::CLIENTS_MAX_CAPACITY)
         {
 #ifdef LOGGING_ENABLED_STDOUT
     logger::error("Thread pool capacity exceded. Closing connection.");
+#elifdef LOGGING_ENABLED_FILE
+    logger::error(defaults::LOG_FILE_HANDLE, "Thread pool capacity exceded. Closing connection.");
 #endif
             socket->close();
         }
@@ -165,6 +211,8 @@ void ServerInstance::start()
         });
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info("Adding processing task to thread pool");
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, "Adding processing task to thread pool");
 #endif
     }
 }
@@ -195,7 +243,9 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
             if (pos == std::string::npos)
             {
 #ifdef LOGGING_ENABLED_STDOUT
-    logger::error("Could not parse nvallid HTTP request.");
+    logger::error("Could not parse invalid HTTP request.");
+#elifdef LOGGING_ENABLED_FILE
+    logger::error(defaults::LOG_FILE_HANDLE, "Could not parse nvallid HTTP request.");
 #endif
                 throw std::runtime_error("Invalid HTTP request");
             }
@@ -250,12 +300,18 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
                 {
                     #ifdef LOGGING_ENABLED_STDOUT
                         logger::info("Client resetted the connection");
+                    #elifdef LOGGING_ENABLED_FILE
+                        logger::info(defaults::LOG_FILE_HANDLE, "Client resetted the connection");
                     #endif
                 }
                 else
                 {
                     #ifdef LOGGING_ENABLED_STDOUT
                         logger::error(std::format(                            
+                            "Connection error occured: {}", ec.what()
+                        ));
+                    #elifdef LOGGING_ENABLED_FILE
+                        logger::error(defaults::LOG_FILE_HANDLE, std::format(                            
                             "Connection error occured: {}", ec.what()
                         ));
                     #endif
@@ -267,6 +323,8 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
             {
                 #ifdef LOGGING_ENABLED_STDOUT
                     logger::info("Client closed the connection");
+                #elifdef LOGGING_ENABLED_FILE
+                    logger::info(defaults::LOG_FILE_HANDLE, "Client closed the connection");
                 #endif
                 break;
             }
@@ -276,7 +334,9 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
     catch (const std::exception &e)
     {
 #ifdef LOGGING_ENABLED_STDOUT
-        logger::error(std::format("Error occured: {}", e.what()));
+    logger::error(std::format("Error occured: {}", e.what()));
+#elifdef LOGGING_ENABLED_FILE
+    logger::error(defaults::LOG_FILE_HANDLE, std::format("Error occured: {}", e.what()));
 #endif
     }
 }
@@ -285,5 +345,7 @@ ServerInstance::~ServerInstance()
 {
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info("Terminating Server");
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, "Terminating Server");
 #endif
 }

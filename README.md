@@ -13,7 +13,7 @@
 - Added keep-alive support 
 - Added support of dynamic path arguments
 - Fixed errors
-- Added logging. Supports printing to stdout, and to output streams as well. Currently implemented only printing to stdout in program. Enabled via enabling macro LOGGING_ENABLED_STDOUT
+- Added logging. Implemented writing either to stdout or to log file by defining corresponding macros: LOGGING_ENABLED_STDOUT or LOGGING_ENABLED_FILE
 
 
 ### TODO

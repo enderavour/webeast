@@ -3,6 +3,7 @@
 
 #include <string_view>
 #include <ostream>
+#include <filesystem>
 
 namespace logger
 {
@@ -17,6 +18,10 @@ namespace logger
     void error(std::ostream &out, std::string_view msg);
     void trace(std::ostream &out, std::string_view msg);
     void debug(std::ostream &out, std::string_view msg);
+
+    void open_log_file(const std::filesystem::path &fname);  
 }
+
+
 
 #endif

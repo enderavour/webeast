@@ -1,5 +1,6 @@
 #include "include/static.hpp"
 #include "include/logger.hpp"
+#include "include/defs.hpp"
 #include <fstream>
 #include <vector>
 #include <format>
@@ -13,6 +14,8 @@ static_dir_path(sdir_path)
 {
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format("Instantiated static directory with path: {}", sdir_path.c_str()));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format("Instantiated static directory with path: {}", sdir_path.c_str()));
 #endif
 }
 
@@ -20,6 +23,8 @@ void StaticDir::set_static_dir_path(const fs::path &sdir_path)
 {
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format("Instantiated static directory with path: {}", sdir_path.c_str()));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format("Instantiated static directory with path: {}", sdir_path.c_str()));
 #endif
     static_dir_path = sdir_path;
 }

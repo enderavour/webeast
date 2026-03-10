@@ -8,6 +8,8 @@ Router::Router()
 {
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info("Created Router, filled with default 404/405 callbacks");
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, "Created Router, filled with default 404/405 callbacks");
 #endif
     m_notFoundHandler = defaults::default_404_handler;
     m_notAllowedHandler = defaults::default_405_handler;
@@ -18,6 +20,8 @@ void Router::register_handler(const std::string &path, HttpMethods method, Callb
     m_Callbacks[path][method] = std::move(callback);
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format("Added callback handler at path {}", path));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format("Added callback handler at path {}", path));
 #endif
 }
 
@@ -28,6 +32,11 @@ void Router::remove_handler(const std::string &path, HttpMethods method)
     {
 #ifdef LOGGING_ENABLED_STDOUT
         logger::error(
+            std::format("Could not find any callback handler at path {}", path)
+        );
+#elifdef LOGGING_ENABLED_FILE
+        logger::error(
+            defaults::LOG_FILE_HANDLE,
             std::format("Could not find any callback handler at path {}", path)
         );
 #endif
@@ -42,6 +51,8 @@ void Router::remove_handler(const std::string &path, HttpMethods method)
 
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format("Removed handler at path {}", path));
+#elifdef LOGGING_ENABLED_FILE 
+    logger::info(defaults::LOG_FILE_HANDLE, std::format("Removed handler at path {}", path));
 #endif
 }
 
@@ -55,6 +66,8 @@ void Router::register_dynamic(const std::string &path, HttpMethods method, Dynam
 
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format("Registered dynamic method at {}", path));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format("Registered dynamic method at {}", path));
 #endif
 }
 
@@ -75,6 +88,8 @@ bool Router::dispatch(const Request<std::string> &req, Response<std::string> &re
     {
 #ifdef LOGGING_ENABLED_STDOUT
     logger::warn(std::format("Dispatch: The provided path is not found: {}", req.m_Path));
+#elifdef LOGGING_ENABLED_FILE
+    logger::warn(defaults::LOG_FILE_HANDLE, std::format("Dispatch: The provided path is not found: {}", req.m_Path));
 #endif
         m_notFoundHandler(req, res);
         res.set_status_code(HttpStatus::NotFound);
@@ -87,6 +102,8 @@ bool Router::dispatch(const Request<std::string> &req, Response<std::string> &re
     {
 #ifdef LOGGING_ENABLED_STDOUT
     logger::warn(std::format("Dispatch: The provided path is not allowed at path: {}", req.m_Path));
+#elifdef LOGGING_ENABLED_FILE
+    logger::warn(defaults::LOG_FILE_HANDLE, std::format("Dispatch: The provided path is not found: {}", req.m_Path));
 #endif
         m_notAllowedHandler(req, res);
         res.set_status_code(HttpStatus::MethodNotAllowed);
@@ -113,6 +130,11 @@ Router::get_handler(const std::string &path, HttpMethods method, boost::smatch &
     logger::warn(std::format(
         "Dispatch: The provided path is not allowed at path: {}", path
     ));
+#elifdef LOGGING_ENABLED_FILE
+    logger::warn(
+        defaults::LOG_FILE_HANDLE,
+        std::format("Dispatch: The provided path is not allowed at path: {}", path)
+    );
 #endif
         return {0, m_notAllowedHandler};
     }
@@ -132,6 +154,11 @@ Router::get_handler(const std::string &path, HttpMethods method, boost::smatch &
     }
 #ifdef LOGGING_ENABLED_STDOUT
     logger::warn(std::format("Dispatch: The provided path is not found: {}", path));
+#elifdef LOGGING_ENABLED_FILE
+    logger::warn(
+        defaults::LOG_FILE_HANDLE,
+        std::format("Dispatch: The provided path is not found: {}", path)
+    );
 #endif
     return {0, m_notFoundHandler};
 }
@@ -140,5 +167,7 @@ Router::~Router()
 {
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info("Terminating Router");
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, "Terminating Router");
 #endif
 }

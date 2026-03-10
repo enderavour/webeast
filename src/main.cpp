@@ -13,6 +13,9 @@ int32_t main()
 {
     ServerInstance server("127.0.0.1", 8080);
     StaticDir static_dir(defaults::STATIC_DIR_PATH);
+#ifdef LOGGING_ENABLED_FILE
+    logger::open_log_file(defaults::LOG_FILE_PATH);
+#endif
 
     Router router;
     server.include_router(router);
