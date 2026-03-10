@@ -11,12 +11,16 @@ StaticDir::StaticDir() = default;
 StaticDir::StaticDir(const fs::path &sdir_path):
 static_dir_path(sdir_path) 
 {
+#ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format("Instantiated static directory with path: {}", sdir_path.c_str()));
+#endif
 }
 
 void StaticDir::set_static_dir_path(const fs::path &sdir_path)
 {
+#ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format("Instantiated static directory with path: {}", sdir_path.c_str()));
+#endif
     static_dir_path = sdir_path;
 }
 

@@ -32,6 +32,7 @@ public:
     std::pair<int32_t, std::variant<CallbackHandler, DynamicCallbackHandler>> 
     get_handler(const std::string &path, HttpMethods method, boost::smatch &out_match) const;
     bool dispatch(const Request<std::string> &req, Response<std::string> &res);
+    ~Router();
 private:
     std::map<std::string, std::map<HttpMethods, CallbackHandler>> m_Callbacks;
     std::vector<DynamicRoute> m_DynamicRoutes;

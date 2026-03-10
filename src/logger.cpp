@@ -16,6 +16,7 @@ std::string get_time()
     return buffer;
 }
 
+// Stdout
 void logger::info(std::string_view msg)
 {
     std::println("{} [INFO] {}", get_time(), msg);
@@ -39,4 +40,30 @@ void logger::trace(std::string_view msg)
 void logger::debug(std::string_view msg)
 {
     std::println("{} [DEBUG] {}", get_time(), msg); 
+}
+
+// Ostream 
+void logger::info(std::ostream &out, std::string_view msg)
+{
+    out << std::format("{} [INFO] {}", get_time(), msg) << '\n';
+}
+
+void logger::warn(std::ostream &out, std::string_view msg)
+{
+    out << std::format("{} [WARN] {}", get_time(), msg) << '\n';
+}
+
+void logger::error(std::ostream &out, std::string_view msg)
+{
+    out << std::format("{} [ERROR] {}", get_time(), msg) << '\n';  
+}
+
+void logger::trace(std::ostream &out, std::string_view msg)
+{
+    out << std::format("{} [TRACE] {}", get_time(), msg) << '\n';
+}
+
+void logger::debug(std::ostream &out, std::string_view msg)
+{
+    out << std::format("{} [DEBUG] {}", get_time(), msg) << '\n'; 
 }

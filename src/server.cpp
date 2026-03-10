@@ -11,20 +11,24 @@ ServerInstance::ServerInstance(const std::string &addr, int32_t port):
 m_Addr(addr), m_Port(port), m_AsioCTX(1), m_Acceptor(m_AsioCTX, tcp::endpoint(
     make_address(addr), port)), m_Pool(defaults::CLIENTS_MAX_CAPACITY) 
 {
+#ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
         "Created server with at address {} and port {}. Max connections: {}",
         addr, port, defaults::CLIENTS_MAX_CAPACITY
     ));
+#endif
 }
 
 ServerInstance::ServerInstance(const std::string &addr, int32_t port, Router router):
 m_Router(router), m_Addr(addr), m_Port(port), m_Acceptor(m_AsioCTX, tcp::endpoint(
     make_address(addr), port)), m_Pool(defaults::CLIENTS_MAX_CAPACITY) 
 {
+#ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
         "Created server with at address {} and port {}. Max connections: {}",
         addr, port, defaults::CLIENTS_MAX_CAPACITY
     ));
+#endif
 }
 
 void ServerInstance::include_router(Router router)
@@ -39,6 +43,11 @@ void ServerInstance::get(const std::string &path, CallbackHandler &&handler)
         path, HttpMethods::GET, 
         std::forward<CallbackHandler>(handler)
     );
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format(
+        "Registering GET request at path: {}", path
+    ));
+#endif
 }
 
 void ServerInstance::post(const std::string &path, CallbackHandler &&handler)
@@ -47,6 +56,11 @@ void ServerInstance::post(const std::string &path, CallbackHandler &&handler)
         path, HttpMethods::POST, 
         std::forward<CallbackHandler>(handler)
     );
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format(
+        "Registering POST request at path: {}", path
+    ));
+#endif
 }
 
 void ServerInstance::put(const std::string &path, CallbackHandler &&handler)
@@ -55,6 +69,11 @@ void ServerInstance::put(const std::string &path, CallbackHandler &&handler)
         path, HttpMethods::PUT, 
         std::forward<CallbackHandler>(handler)
     );
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format(
+        "Registering PUT request at path: {}", path
+    ));
+#endif
 }
 
 void ServerInstance::_delete(const std::string &path, CallbackHandler &&handler)
@@ -63,6 +82,11 @@ void ServerInstance::_delete(const std::string &path, CallbackHandler &&handler)
         path, HttpMethods::DELETE,
         std::forward<CallbackHandler>(handler)
     );
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format(
+        "Registering DELETE request at path: {}", path
+    ));
+#endif
 }
 
 // Dynamic
@@ -72,6 +96,11 @@ void ServerInstance::get(const std::string &path, DynamicCallbackHandler &&handl
         path, HttpMethods::GET, 
         std::forward<DynamicCallbackHandler>(handler)
     );
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format(
+        "Registering dynamic GET request at path: {}", path
+    ));
+#endif
 }
 
 void ServerInstance::post(const std::string &path, DynamicCallbackHandler &&handler)
@@ -80,6 +109,11 @@ void ServerInstance::post(const std::string &path, DynamicCallbackHandler &&hand
         path, HttpMethods::POST, 
         std::forward<DynamicCallbackHandler>(handler)
     );
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format(
+        "Registering dynamic POST request at path: {}", path
+    ));
+#endif
 }
 
 void ServerInstance::put(const std::string &path, DynamicCallbackHandler &&handler)
@@ -88,6 +122,11 @@ void ServerInstance::put(const std::string &path, DynamicCallbackHandler &&handl
         path, HttpMethods::PUT, 
         std::forward<DynamicCallbackHandler>(handler)
     );
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format(
+        "Registering dynamic PUT request at path: {}", path
+    ));
+#endif
 }
 
 void ServerInstance::_delete(const std::string &path, DynamicCallbackHandler &&handler)
@@ -96,6 +135,11 @@ void ServerInstance::_delete(const std::string &path, DynamicCallbackHandler &&h
         path, HttpMethods::DELETE,
         std::forward<DynamicCallbackHandler>(handler)
     );
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format(
+        "Registering dynamic DELETEs request at path: {}", path
+    ));
+#endif
 }
 
 void ServerInstance::start()
@@ -104,13 +148,24 @@ void ServerInstance::start()
     {
         auto socket = std::make_shared<tcp::socket>(m_AsioCTX);
         m_Acceptor.accept(*socket);
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info("Accepted new client");
+#endif
 
         if (m_Pool.active_tasks_count() + 1 >= defaults::CLIENTS_MAX_CAPACITY)
+        {
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::error("Thread pool capacity exceded. Closing connection.");
+#endif
             socket->close();
+        }
 
         m_Pool.add_task([this, socket = std::move(socket)]() {
             process_connection(std::move(socket));
         });
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info("Adding processing task to thread pool");
+#endif
     }
 }
 
@@ -138,7 +193,12 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
 
             auto pos = data.find("\r\n\r\n");
             if (pos == std::string::npos)
+            {
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::error("Could not parse nvallid HTTP request.");
+#endif
                 throw std::runtime_error("Invalid HTTP request");
+            }
 
             std::string header_part = data.substr(0, pos + 4);
             std::string body_part = data.substr(pos + 4);
@@ -188,22 +248,42 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
             {
                 if (ec == boost::asio::error::connection_reset)
                 {
-                    std::println("Client resetted the connection");
+                    #ifdef LOGGING_ENABLED_STDOUT
+                        logger::info("Client resetted the connection");
+                    #endif
                 }
                 else
                 {
-                    std::println("Connection error occured: {}", ec.message());
+                    #ifdef LOGGING_ENABLED_STDOUT
+                        logger::error(std::format(                            
+                            "Connection error occured: {}", ec.what()
+                        ));
+                    #endif
                 }
             }
 
             auto it_conn = request.m_Headers.find("Connection");
             if (it_conn != request.m_Headers.end() && it_conn->second == "close")
+            {
+                #ifdef LOGGING_ENABLED_STDOUT
+                    logger::info("Client closed the connection");
+                #endif
                 break;
+            }
         }
         socket->close();
     }
     catch (const std::exception &e)
     {
-        std::cerr << e.what() << std::endl;
+#ifdef LOGGING_ENABLED_STDOUT
+        logger::error(std::format("Error occured: {}", e.what()));
+#endif
     }
+}
+
+ServerInstance::~ServerInstance()
+{
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info("Terminating Server");
+#endif
 }

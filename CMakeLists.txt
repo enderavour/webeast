@@ -17,6 +17,10 @@ add_executable(webeast
 
 set(CMAKE_BUILD_TYPE Debug)
 
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+endif()
+
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_definitions(webeast PRIVATE LOGGING_ENABLED_STDOUT)
     target_compile_options(webeast PRIVATE -ggdb)
 endif()

@@ -29,6 +29,7 @@ public:
     void _delete(const std::string &path, DynamicCallbackHandler &&handler);
 
     void start();
+    ~ServerInstance();
 private:
     Router m_Router;
     std::string m_Addr;

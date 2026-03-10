@@ -6,7 +6,9 @@
 
 Router::Router()
 {
+#ifdef LOGGING_ENABLED_STDOUT
     logger::info("Created Router, filled with default 404/405 callbacks");
+#endif
     m_notFoundHandler = defaults::default_404_handler;
     m_notAllowedHandler = defaults::default_405_handler;
 }
@@ -14,19 +16,33 @@ Router::Router()
 void Router::register_handler(const std::string &path, HttpMethods method, CallbackHandler &&callback)
 {
     m_Callbacks[path][method] = std::move(callback);
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format("Added callback handler at path {}", path));
+#endif
 }
 
 void Router::remove_handler(const std::string &path, HttpMethods method)
 {
     auto entry = m_Callbacks.find(path);
     if (entry == m_Callbacks.end())
+    {
+#ifdef LOGGING_ENABLED_STDOUT
+        logger::error(
+            std::format("Could not find any callback handler at path {}", path)
+        );
+#endif
         return;
+    }
 
     auto &method_map = entry->second;
     method_map.erase(method);
 
     if (method_map.empty())
         m_Callbacks.erase(entry);
+
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format("Removed handler at path {}", path));
+#endif
 }
 
 void Router::register_dynamic(const std::string &path, HttpMethods method, DynamicCallbackHandler &&callback)
@@ -36,6 +52,10 @@ void Router::register_dynamic(const std::string &path, HttpMethods method, Dynam
     boost::replace_all(regex_path, "}", ")");
     regex_path = "^" + regex_path + "$";
     m_DynamicRoutes.push_back({boost::regex(regex_path), method, callback});
+
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format("Registered dynamic method at {}", path));
+#endif
 }
 
 void Router::set_404_handler(CallbackHandler &&callback)
@@ -53,6 +73,9 @@ bool Router::dispatch(const Request<std::string> &req, Response<std::string> &re
     auto path_it = m_Callbacks.find(req.m_Path);
     if (path_it == m_Callbacks.end())
     {
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::warn(std::format("Dispatch: The provided path is not found: {}", req.m_Path));
+#endif
         m_notFoundHandler(req, res);
         res.set_status_code(HttpStatus::NotFound);
         return false;
@@ -62,6 +85,9 @@ bool Router::dispatch(const Request<std::string> &req, Response<std::string> &re
     auto method_it = method_map.find(req.m_Method);
     if (method_it == method_map.end())
     {
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::warn(std::format("Dispatch: The provided path is not allowed at path: {}", req.m_Path));
+#endif
         m_notAllowedHandler(req, res);
         res.set_status_code(HttpStatus::MethodNotAllowed);
         return false;
@@ -83,6 +109,11 @@ Router::get_handler(const std::string &path, HttpMethods method, boost::smatch &
         if (method_it != method_map.end())
             return {0, method_it->second};
         
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::warn(std::format(
+        "Dispatch: The provided path is not allowed at path: {}", path
+    ));
+#endif
         return {0, m_notAllowedHandler};
     }
         
@@ -99,5 +130,15 @@ Router::get_handler(const std::string &path, HttpMethods method, boost::smatch &
         }
         out_match = match;
     }
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::warn(std::format("Dispatch: The provided path is not found: {}", path));
+#endif
     return {0, m_notFoundHandler};
+}
+
+Router::~Router()
+{
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info("Terminating Router");
+#endif
 }

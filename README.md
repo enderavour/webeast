@@ -13,12 +13,13 @@
 - Added keep-alive support 
 - Added support of dynamic path arguments
 - Fixed errors
-- Added basic minimal logger. Currently just into stdout. Further will be added possibility to specify log files, and enable it by compilation macro
+- Added logging. Supports printing to stdout, and to output streams as well. Currently implemented only printing to stdout in program. Enabled via enabling macro LOGGING_ENABLED_STDOUT
 
 
 ### TODO
 - Add DBMS
 - Build ORM on top of DBMS
+- Add JSON support
 
 To download, build and run application:
 ```
