@@ -30,8 +30,10 @@ int32_t main()
     });
     server.get("/form", STATIC(static_dir, "form.html"));
     server.post("/user", [&static_dir](const Request<std::string> &request, Response<std::string> &response) {
-        logger::debug(std::format("Body after filling the form: {}", request.m_Body));
-        
+        auto parsed = parse_body_params(request.m_Body);
+        for (const auto &[k, v]: parsed)
+            logger::debug(std::format("Key: {}, Value: {}", k, v));
+
         response.set_status_code(HttpStatus::OK);
         response.set_body(request.m_Body);
         response.set_header("Content-Type", "text/plain");

@@ -4,6 +4,9 @@
 #include <format>
 #include <optional>
 
+namespace urls = boost::urls;
+
+
 template<class T>
 requires std::is_convertible_v<T, std::string>
 Response<T>::Response() = default;
@@ -154,4 +157,14 @@ std::string serialize_response(const Response<std::string> &resp)
     payload += resp.get_body();
 
     return payload;
+}
+
+QueryParams parse_body_params(std::string_view url)
+{
+    QueryParams params;
+    urls::params_view uview(url);
+    for (auto const &p: uview)
+    params[p.key] = p.value;
+
+    return params;
 }

@@ -4,6 +4,10 @@
 #include <type_traits>
 #include <string>
 #include <map>
+#include <unordered_map>
+#include <boost/url.hpp>
+
+using QueryParams = std::unordered_map<std::string, std::string>;
 
 enum class HttpMethods 
 {
@@ -65,5 +69,7 @@ Request<std::string> deserialize_request(const std::string &source);
 std::string serialize_response(const Response<std::string> &resp);
 
 #define dynamic_get_match(match, index) match[index].str()
+
+QueryParams parse_body_params(std::string_view url);
 
 #endif

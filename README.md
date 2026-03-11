@@ -14,7 +14,7 @@
 - Added support of dynamic path arguments
 - Fixed errors
 - Added logging. Implemented writing either to stdout or to log file by defining corresponding macros: LOGGING_ENABLED_STDOUT or LOGGING_ENABLED_FILE
-
+- Added minimal URL parsing
 
 ### TODO
 - Add DBMS

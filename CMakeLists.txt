@@ -15,6 +15,8 @@ add_executable(webeast
     src/logger.cpp
 )
 
+target_link_libraries(webeast PRIVATE boost_url)
+
 set(CMAKE_BUILD_TYPE Debug)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
