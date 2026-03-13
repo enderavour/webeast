@@ -12,6 +12,7 @@ namespace defaults
     extern const int32_t CLIENTS_MAX_CAPACITY;
     extern const std::filesystem::path STATIC_DIR_PATH;
     extern const std::filesystem::path LOG_FILE_PATH;
+    extern const std::filesystem::path DB_PATH;
     extern std::ofstream LOG_FILE_HANDLE;
 
     void default_404_handler(const Request<std::string>&, Response<std::string> &res);

@@ -4,18 +4,18 @@ project(Server CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 
-add_executable(webeast
-    src/http.cpp
-    src/router.cpp
-    src/main.cpp
-    src/server.cpp
-    src/tpool.cpp
-    src/static.cpp
-    src/defs.cpp
-    src/logger.cpp
+find_package(SQLite3 REQUIRED)
+find_package(boost_url REQUIRED)
+
+file(GLOB_RECURSE SOURCES 
+    "src/*.cpp"
+    "src/orm/*.cpp"
 )
 
+add_executable(webeast ${SOURCES})
+
 target_link_libraries(webeast PRIVATE boost_url)
+target_link_libraries(webeast PRIVATE SQLite::SQLite3)
 
 set(CMAKE_BUILD_TYPE Debug)
 

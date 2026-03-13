@@ -15,10 +15,10 @@
 - Fixed errors
 - Added logging. Implemented writing either to stdout or to log file by defining corresponding macros: LOGGING_ENABLED_STDOUT or LOGGING_ENABLED_FILE
 - Added minimal URL parsing
+- Added minimal ORM on top of SQLite3 DBMS. It is still messy
 
 ### TODO
-- Add DBMS
-- Build ORM on top of DBMS
+- Reogranize and clean structure of ORM implementation
 - Add JSON support
 
 To download, build and run application:

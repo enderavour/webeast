@@ -4,6 +4,8 @@
 #include "include/static.hpp"
 #include "include/defs.hpp"
 #include "include/logger.hpp"
+#include "include/orm/orm.hpp"
+#include "models/user.hpp"
 #include <iostream>
 #include <print>
 #include <new>
@@ -17,6 +19,9 @@ int32_t main()
     logger::open_log_file(defaults::LOG_FILE_PATH);
 #endif
 
+    orm::Database db(defaults::DB_PATH);
+    orm::create_table<User>(db.handle());
+
     Router router;
     server.include_router(router);
     server.get("/", STATIC(static_dir, "index.html"));
@@ -29,14 +34,16 @@ int32_t main()
         response.set_header("Content-Type", "text/plain");
     });
     server.get("/form", STATIC(static_dir, "form.html"));
-    server.post("/user", [&static_dir](const Request<std::string> &request, Response<std::string> &response) {
+    server.post("/user", [&static_dir, &db](const Request<std::string> &request, Response<std::string> &response) {
         auto parsed = parse_body_params(request.m_Body);
         for (const auto &[k, v]: parsed)
-            logger::debug(std::format("Key: {}, Value: {}", k, v));
+        {
+            orm::insert(db.handle(), User{std::stoi(v), k});
+        }
 
         response.set_status_code(HttpStatus::OK);
-        response.set_body(request.m_Body);
-        response.set_header("Content-Type", "text/plain");
+        response.set_body("User added to database");
+        response.set_header("Content-Type", "text/html");
     });
     server.get("/greet/{}", 
         [](const Request<std::string> &request, Response<std::string> &response, boost::smatch &_match)
