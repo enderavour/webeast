@@ -44,6 +44,8 @@ int32_t main()
         orm::insert(db, User{std::stoi(values[c]), values[++c]});
         c++;
 
+        logger::info("User was successfully added to database");
+
         response.set_status_code(HttpStatus::OK);
         response.set_body("User added to database");
         response.set_header("Content-Type", "text/html");
