@@ -16,10 +16,11 @@
 - Added logging. Implemented writing either to stdout or to log file by defining corresponding macros: LOGGING_ENABLED_STDOUT or LOGGING_ENABLED_FILE
 - Added minimal URL parsing
 - Added minimal ORM on top of SQLite3 DBMS. It is still messy
+- The ORM was moved fully to headers, in order to avoid multiple template instantiationss
 
 ### TODO
-- Reogranize and clean structure of ORM implementation
 - Add JSON support
+- Cleanup the code and architecture
 
 To download, build and run application:
 ```
