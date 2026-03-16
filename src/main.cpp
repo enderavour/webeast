@@ -20,7 +20,7 @@ int32_t main()
 #endif
 
     orm::Database db(defaults::DB_PATH);
-    orm::create_table<User>(db.handle());
+    orm::create_table<User>(db);
 
     Router router;
     server.include_router(router);
@@ -36,10 +36,13 @@ int32_t main()
     server.get("/form", STATIC(static_dir, "form.html"));
     server.post("/user", [&static_dir, &db](const Request<std::string> &request, Response<std::string> &response) {
         auto parsed = parse_body_params(request.m_Body);
+        int32_t c = 0; 
+        std::vector<std::string> values;
         for (const auto &[k, v]: parsed)
-        {
-            orm::insert(db.handle(), User{std::stoi(v), k});
-        }
+            values.push_back(v);
+        
+        orm::insert(db, User{std::stoi(values[c]), values[++c]});
+        c++;
 
         response.set_status_code(HttpStatus::OK);
         response.set_body("User added to database");

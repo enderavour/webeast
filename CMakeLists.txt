@@ -9,7 +9,6 @@ find_package(boost_url REQUIRED)
 
 file(GLOB_RECURSE SOURCES 
     "src/*.cpp"
-    "src/orm/*.cpp"
 )
 
 add_executable(webeast ${SOURCES})
