@@ -6,16 +6,23 @@
 #include <map>
 #include <unordered_map>
 #include <boost/url.hpp>
+#include <nlohmann/json.hpp>
 
 using QueryParams = std::unordered_map<std::string, std::string>;
 
-enum class HttpMethods 
+enum class HttpMethods: int32_t
 {
     GET,
     POST,
     PUT,
     DELETE,
-    UNKNOWN
+    UNKNOWN,
+    // Versions for returning JSON version of method
+    JSON_GET,
+    JSON_POST,
+    JSON_PUT,
+    JSON_DELETE,
+    JSON_UNKNOWN
 };
 
 enum class HttpStatus
@@ -28,7 +35,8 @@ enum class HttpStatus
 };
 
 template<class T>
-requires std::is_convertible_v<T, std::string>
+requires std::is_convertible_v<T, std::string> || 
+std::is_same_v<std::decay_t<T>, nlohmann::json>
 struct Request
 {
     HttpMethods m_Method;
@@ -42,7 +50,8 @@ struct Request
 };
 
 template<class T>
-requires std::is_convertible_v<T, std::string>
+requires std::is_convertible_v<T, std::string> || 
+std::is_same_v<std::decay_t<T>, nlohmann::json>
 class Response
 {
 public:
@@ -67,6 +76,7 @@ private:
 
 Request<std::string> deserialize_request(const std::string &source);
 std::string serialize_response(const Response<std::string> &resp);
+std::string serialize_response(const Response<nlohmann::json> &resp);
 
 #define dynamic_get_match(match, index) match[index].str()
 

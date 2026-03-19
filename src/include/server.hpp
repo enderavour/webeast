@@ -28,6 +28,12 @@ public:
     void put(const std::string &path, DynamicCallbackHandler &&handler);
     void _delete(const std::string &path, DynamicCallbackHandler &&handler);
 
+    // Json
+    void get(const std::string &path, JsonCallbackHandler&&handler);
+    void post(const std::string &path, JsonCallbackHandler &&handler);
+    void put(const std::string &path, JsonCallbackHandler &&handler);
+    void _delete(const std::string &path, JsonCallbackHandler &&handler);
+
     void start();
     ~ServerInstance();
 private:

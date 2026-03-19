@@ -60,6 +60,25 @@ int32_t main()
             response.set_header("Content-Type", "text/html");
         }
     );
+    server.post("/jsonp",
+        [](const Request<nlohmann::json> &request, Response<nlohmann::json> &response)
+        {
+            logger::info(
+                std::format("Received JSON from server: {}", request.m_Body.dump())
+            );
+            auto json_obj = nlohmann::json::object({
+                {"status", 200},
+                {"response", "Ok!"}
+            });           
+
+            response.set_status_code(HttpStatus::OK);
+            response.set_body(json_obj);
+            response.set_header("Content-Length", std::to_string(
+               json_obj.dump().size()
+            ));
+            response.set_header("Content-Type", "application/json");
+        }
+    );
 
     logger::info("Server is running at 127.0.0.1:8080");
 

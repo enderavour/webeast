@@ -6,18 +6,20 @@
 
 namespace urls = boost::urls;
 
-
 template<class T>
-requires std::is_convertible_v<T, std::string>
+requires std::is_convertible_v<T, std::string> || 
+std::is_same_v<std::decay_t<T>, nlohmann::json>
 Response<T>::Response() = default;
 
 template<class T>
-requires std::is_convertible_v<T, std::string>
+requires std::is_convertible_v<T, std::string> || 
+std::is_same_v<std::decay_t<T>, nlohmann::json>
 Response<T>::Response(HttpStatus statusCode, T &&body, const std::map<std::string, std::string> &headers):
 m_StatusCode(statusCode), m_Body(body), m_Headers(headers) {}
 
 template<class T>
-requires std::is_convertible_v<T, std::string>
+requires std::is_convertible_v<T, std::string> || 
+std::is_same_v<std::decay_t<T>, nlohmann::json>
 void Response<T>::set_status_code(HttpStatus code)
 {
     m_StatusCode = code;
@@ -25,7 +27,8 @@ void Response<T>::set_status_code(HttpStatus code)
 
 
 template<class T>
-requires std::is_convertible_v<T, std::string>
+requires std::is_convertible_v<T, std::string> || 
+std::is_same_v<std::decay_t<T>, nlohmann::json>
 void Response<T>::set_header(const std::string &key, const std::string &value)
 {
     m_Headers[key] = value;
@@ -33,7 +36,8 @@ void Response<T>::set_header(const std::string &key, const std::string &value)
 
 
 template<class T>
-requires std::is_convertible_v<T, std::string>
+requires std::is_convertible_v<T, std::string> || 
+std::is_same_v<std::decay_t<T>, nlohmann::json>
 void Response<T>::set_body(const T &body) 
 {
     m_Body = body;
@@ -41,7 +45,8 @@ void Response<T>::set_body(const T &body)
 
 
 template<class T>
-requires std::is_convertible_v<T, std::string>
+requires std::is_convertible_v<T, std::string> || 
+std::is_same_v<std::decay_t<T>, nlohmann::json>
 HttpStatus Response<T>::get_status_code() const
 {
     return m_StatusCode;
@@ -49,7 +54,8 @@ HttpStatus Response<T>::get_status_code() const
 
 
 template<class T>
-requires std::is_convertible_v<T, std::string>
+requires std::is_convertible_v<T, std::string> ||  
+std::is_same_v<std::decay_t<T>, nlohmann::json>
 std::map<std::string, std::string> Response<T>::get_headers() const
 {
     return m_Headers;
@@ -57,7 +63,8 @@ std::map<std::string, std::string> Response<T>::get_headers() const
 
 
 template<class T>
-requires std::is_convertible_v<T, std::string>
+requires std::is_convertible_v<T, std::string> || 
+std::is_same_v<std::decay_t<T>, nlohmann::json>
 std::decay_t<T> Response<T>::get_body() const
 {
     return m_Body;
@@ -67,6 +74,9 @@ template class Response<std::string>;
 template class Response<std::string&>;
 template class Response<const std::string&>;
 template class Response<std::string&&>;
+template class Response<nlohmann::json>;
+template class Response<nlohmann::json&&>;
+
 
 // Helper function for converting string method to HtpMethods enumeration
 HttpMethods convert_method(const std::string &method)
@@ -92,16 +102,24 @@ Request<std::string> deserialize_request(const std::string &source)
     std::string method, path, http;
     stream >> method >> path >> http;
 
+    std::string _dummy;
+    std::getline(stream, _dummy);
+
     Request<std::string> rq{};
     
-    HttpMethods converted_method = convert_method(method);
-    rq.m_Method = converted_method;
+    rq.m_Method = convert_method(method);
     rq.m_Path = path;
     rq.m_HttpVersion = http;
     
     std::string header;
-    while (std::getline(stream, header) && header != "\r")
+    while (std::getline(stream, header))
     {
+        if (!header.empty() && header.back() == '\r')
+            header.pop_back();
+
+        if (header.empty())
+            break;
+
         std::string key, value;
         auto pos = header.find(':');
         if (pos != std::string::npos)
@@ -155,6 +173,29 @@ std::string serialize_response(const Response<std::string> &resp)
 
     payload += "\r\n";
     payload += resp.get_body();
+
+    return payload;
+}
+
+std::string serialize_response(const Response<nlohmann::json> &resp)
+{
+    std::string payload;
+    payload += std::format(
+        "HTTP/1.1 {} {}\r\n",
+        static_cast<int32_t>(resp.get_status_code()),
+        status_to_string(resp.get_status_code()).value_or("Unknown")
+    );
+
+    for (const auto &[key, value]: resp.get_headers())
+    {
+        payload += std::format(
+            "{}: {}\r\n",
+            key, value
+        );
+    }
+
+    payload += "\r\n";
+    payload += resp.get_body().dump();
 
     return payload;
 }

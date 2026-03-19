@@ -7,5 +7,19 @@
 </head>
 <body>
     <h1>Welcome to the main page of the server!</h1>
+    <script>
+        fetch("http://127.0.0.1:8080/jsonp", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name: "John",
+                age: 25
+            })
+        })
+        .then(resp => resp.json())
+        .then(data => alert(JSON.stringify(data)));
+    </script>
 </body>
 </html>

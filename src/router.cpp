@@ -62,13 +62,26 @@ void Router::register_dynamic(const std::string &path, HttpMethods method, Dynam
     boost::replace_all(regex_path, "{", "([^/]+");
     boost::replace_all(regex_path, "}", ")");
     regex_path = "^" + regex_path + "$";
-    m_DynamicRoutes.push_back({boost::regex(regex_path), method, callback});
+    m_DynamicRoutes.emplace_back(boost::regex(regex_path), method, callback);
 
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format("Registered dynamic method at {}", path));
 #elifdef LOGGING_ENABLED_FILE
     logger::info(defaults::LOG_FILE_HANDLE, std::format("Registered dynamic method at {}", path));
 #endif
+}
+
+void Router::register_json(const std::string &path, HttpMethods method, JsonCallbackHandler &&handler)
+{
+    m_JsonRoutes.emplace_back(path, method, handler);
+
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format("Registered method with JSON handler at {}", path));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, 
+        std::format("Registered method with JSON handler at {}", path));
+#endif
+
 }
 
 void Router::set_404_handler(CallbackHandler &&callback)
@@ -114,9 +127,19 @@ bool Router::dispatch(const Request<std::string> &req, Response<std::string> &re
     return true;
 }
 
-std::pair<int32_t, std::variant<CallbackHandler, DynamicCallbackHandler>> 
+
+std::pair<int32_t, std::variant<CallbackHandler, DynamicCallbackHandler, JsonCallbackHandler>> 
 Router::get_handler(const std::string &path, HttpMethods method, boost::smatch &out_match) const
 {
+    if ((int32_t)method >= 5)
+    {
+        for (const auto &jroute: m_JsonRoutes)
+        {
+            if (jroute.path == path && jroute.method == method)
+                return {2, jroute.handler};
+        }      
+    }
+
     auto callbacks_it = m_Callbacks.find(path);
     if (callbacks_it != m_Callbacks.end())
     {

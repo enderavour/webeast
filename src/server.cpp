@@ -5,7 +5,10 @@
 #include "include/logger.hpp"
 #include <print>
 #include <format>
+#include <nlohmann/json.hpp>
+
 using boost::asio::ip::make_address;
+using json = nlohmann::json;
 
 ServerInstance::ServerInstance(const std::string &addr, int32_t port): 
 m_Addr(addr), m_Port(port), m_AsioCTX(1), m_Acceptor(m_AsioCTX, tcp::endpoint(
@@ -175,14 +178,84 @@ void ServerInstance::_delete(const std::string &path, DynamicCallbackHandler &&h
     );
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
-        "Registering dynamic DELETEs request at path: {}", path
+        "Registering dynamic DELETE request at path: {}", path
     ));
 #elifdef LOGGING_ENABLED_FILE
     logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Registering dynamic DELETEs request at path: {}", path
+        "Registering dynamic DELETE request at path: {}", path
     ));
 #endif
 }
+
+// Json
+void ServerInstance::get(const std::string &path, JsonCallbackHandler &&handler)
+{
+    m_Router.register_json(        
+        path, HttpMethods::JSON_GET, 
+        std::forward<JsonCallbackHandler>(handler)
+    );
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format(
+        "Registering JSON GET request at path: {}", path
+    ));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format(
+        "Registering JSON GET request at path: {}", path
+    ));
+#endif
+}
+
+void ServerInstance::post(const std::string &path, JsonCallbackHandler &&handler)
+{
+    m_Router.register_json(        
+        path, HttpMethods::JSON_POST, 
+        std::forward<JsonCallbackHandler>(handler)
+    );
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format(
+        "Registering JSON POST request at path: {}", path
+    ));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format(
+        "Registering JSON POST request at path: {}", path
+    ));
+#endif
+}
+
+void ServerInstance::put(const std::string &path, JsonCallbackHandler &&handler)
+{
+    m_Router.register_json(        
+        path, HttpMethods::JSON_PUT, 
+        std::forward<JsonCallbackHandler>(handler)
+    );
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format(
+        "Registering JSON PUT request at path: {}", path
+    ));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format(
+        "Registering JSON PUT request at path: {}", path
+    ));
+#endif
+}
+
+void ServerInstance::_delete(const std::string &path, JsonCallbackHandler &&handler)
+{
+    m_Router.register_json(        
+        path, HttpMethods::JSON_DELETE, 
+        std::forward<JsonCallbackHandler>(handler)
+    );
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format(
+        "Registering JSON DELETE request at path: {}", path
+    ));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format(
+        "Registering JSON DELETE request at path: {}", path
+    ));
+#endif
+}
+
 
 void ServerInstance::start()
 {
@@ -220,6 +293,7 @@ void ServerInstance::start()
 void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
 {
     Response<std::string> response;
+    Response<json> j_response;
     try
     {
         boost::asio::streambuf buffer;
@@ -255,6 +329,31 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
 
             auto request = deserialize_request(header_part);
 
+            // If headers contain Content-Type: application/json, then set 
+            // appropriate json method into request
+            auto cont_t = request.m_Headers.find("Content-Type");
+            if (cont_t != request.m_Headers.end() && 
+                cont_t->second.find("application/json") != std::string::npos)
+            {
+                switch (request.m_Method)
+                {
+                    case HttpMethods::GET:
+                        request.m_Method = HttpMethods::JSON_GET;
+                        break;
+                    case HttpMethods::POST:
+                        request.m_Method = HttpMethods::JSON_POST;
+                        break;
+                    case HttpMethods::PUT:
+                        request.m_Method = HttpMethods::JSON_PUT;
+                        break;
+                    case HttpMethods::DELETE:
+                        request.m_Method = HttpMethods::JSON_DELETE;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
             std::size_t content_length = 0;
             auto it = request.m_Headers.find("Content-Length");
             if (it != request.m_Headers.end())
@@ -277,22 +376,45 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
             auto handler_pair = m_Router.get_handler(request.m_Path, request.m_Method, _match);
             CallbackHandler static_handler;
             DynamicCallbackHandler dynamic_handler;
+            JsonCallbackHandler json_handler;
 
             if (handler_pair.first == 0)
             {
                 static_handler = std::get<CallbackHandler>(handler_pair.second);
                 static_handler(request, response);
             }
-            else
+            else if (handler_pair.first == 1)
             {
                 dynamic_handler = std::get<DynamicCallbackHandler>(handler_pair.second);
                 dynamic_handler(request, response, _match);
+            }
+            else if (handler_pair.first == 2)
+            {
+                json_handler = std::get<JsonCallbackHandler>(handler_pair.second);
+
+                auto j_body = json::parse(request.m_Body);
+                Request<json> j_request{
+                    request.m_Method,
+                    request.m_Path,
+                    request.m_HttpVersion,
+                    request.m_Headers,
+                    request.m_Params,
+                    j_body
+                };
+
+                json_handler(j_request, j_response);
             }
 
             response.set_header("Connection", "keep-alive");
             response.set_header("Content-Length", std::to_string(response.get_body().size()));
 
-            auto response_payload = serialize_response(response);
+            std::string response_payload;
+
+            if (handler_pair.first == 2)
+                response_payload = serialize_response(j_response);
+            else
+                response_payload = serialize_response(response);
+
             boost::asio::write(*socket, boost::asio::buffer(response_payload));
             if (ec)
             {

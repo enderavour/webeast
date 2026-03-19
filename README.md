@@ -17,10 +17,12 @@
 - Added minimal URL parsing
 - Added minimal ORM on top of SQLite3 DBMS. It is still messy
 - The ORM was moved fully to headers, in order to avoid multiple template instantiationss
+- Added dynamic JSON support (nlohmann::json)
 
 ### TODO
-- Add JSON support
+- Add dynamic JSON support
 - Cleanup the code and architecture
+- Add asynchronous supports of connection management 
 
 To download, build and run application:
 ```
