@@ -256,6 +256,78 @@ void ServerInstance::_delete(const std::string &path, JsonCallbackHandler &&hand
 #endif
 }
 
+// Json Dynamic
+void ServerInstance::get(const std::string &path, JsonDynamicCallbackHandler &&handler)
+{
+    m_Router.register_json_dynamic(
+        path, HttpMethods::JSON_GET,
+        std::forward<JsonDynamicCallbackHandler>(handler)
+    );
+
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format(
+        "Registering JSON Dynamic GET request at path: {}", path
+    ));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format(
+        "Registering JSON Dynamic GET request at path: {}", path
+    ));
+#endif
+}
+
+void ServerInstance::post(const std::string &path, JsonDynamicCallbackHandler &&handler)
+{
+    m_Router.register_json_dynamic(
+        path, HttpMethods::JSON_POST,
+        std::forward<JsonDynamicCallbackHandler>(handler)
+    );
+
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format(
+        "Registering JSON Dynamic POST request at path: {}", path
+    ));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format(
+        "Registering JSON Dynamic POST request at path: {}", path
+    ));
+#endif
+}
+
+void ServerInstance::put(const std::string &path, JsonDynamicCallbackHandler &&handler)
+{
+    m_Router.register_json_dynamic(
+        path, HttpMethods::JSON_PUT,
+        std::forward<JsonDynamicCallbackHandler>(handler)
+    );
+
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format(
+        "Registering JSON Dynamic PUT request at path: {}", path
+    ));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format(
+        "Registering JSON Dynamic PUT request at path: {}", path
+    ));
+#endif
+}
+
+void ServerInstance::_delete(const std::string &path, JsonDynamicCallbackHandler &&handler)
+{
+    m_Router.register_json_dynamic(
+        path, HttpMethods::JSON_DELETE,
+        std::forward<JsonDynamicCallbackHandler>(handler)
+    );
+
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::info(std::format(
+        "Registering JSON Dynamic DELETE request at path: {}", path
+    ));
+#elifdef LOGGING_ENABLED_FILE
+    logger::info(defaults::LOG_FILE_HANDLE, std::format(
+        "Registering JSON Dynamic DELETE request at path: {}", path
+    ));
+#endif
+}
 
 void ServerInstance::start()
 {
@@ -377,6 +449,7 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
             CallbackHandler static_handler;
             DynamicCallbackHandler dynamic_handler;
             JsonCallbackHandler json_handler;
+            JsonDynamicCallbackHandler json_dynamic;
 
             if (handler_pair.first == 0)
             {
@@ -403,6 +476,22 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
                 };
 
                 json_handler(j_request, j_response);
+            }
+            else if (handler_pair.first == 3)
+            {
+                json_dynamic = std::get<JsonDynamicCallbackHandler>(handler_pair.second);
+
+                auto j_body = json::parse(request.m_Body);
+                Request<json> j_request{
+                    request.m_Method,
+                    request.m_Path,
+                    request.m_HttpVersion,
+                    request.m_Headers,
+                    request.m_Params,
+                    j_body
+                };
+
+                json_dynamic(j_request, j_response, _match);
             }
 
             response.set_header("Connection", "keep-alive");

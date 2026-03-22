@@ -13,6 +13,7 @@
 using CallbackHandler = std::function<void(const Request<std::string>&, Response<std::string>&)>;
 using DynamicCallbackHandler = std::function<void(const Request<std::string>&, Response<std::string>&, boost::smatch&)>;
 using JsonCallbackHandler = std::function<void(const Request<nlohmann::json>&, Response<nlohmann::json>&)>;
+using JsonDynamicCallbackHandler = std::function<void(const Request<nlohmann::json>&, Response<nlohmann::json>&, boost::smatch&)>;
 
 struct DynamicRoute
 {
@@ -28,6 +29,13 @@ struct JsonRoute
     JsonCallbackHandler handler;
 };
 
+struct JsonDynamicRoute
+{
+    boost::regex pattern;
+    HttpMethods method;
+    JsonDynamicCallbackHandler handler;
+};
+
 class Router
 {
 public:
@@ -36,9 +44,13 @@ public:
     void remove_handler(const std::string &path, HttpMethods method);
     void register_dynamic(const std::string &path, HttpMethods method, DynamicCallbackHandler &&handler);
     void register_json(const std::string &path, HttpMethods method, JsonCallbackHandler &&handler);
+    void register_json_dynamic(const std::string &path, HttpMethods method, JsonDynamicCallbackHandler &&handler);
     void set_404_handler(CallbackHandler &&callback);
     void set_405_handler(CallbackHandler &&callback);
-    std::pair<int32_t, std::variant<CallbackHandler, DynamicCallbackHandler, JsonCallbackHandler>> 
+    std::pair<int32_t, 
+    std::variant<
+    CallbackHandler, DynamicCallbackHandler, JsonCallbackHandler, 
+    JsonDynamicCallbackHandler>> 
     get_handler(const std::string &path, HttpMethods method, boost::smatch &out_match) const;
     bool dispatch(const Request<std::string> &req, Response<std::string> &res);
     ~Router();
@@ -46,6 +58,7 @@ private:
     std::map<std::string, std::map<HttpMethods, CallbackHandler>> m_Callbacks;
     std::vector<DynamicRoute> m_DynamicRoutes;
     std::vector<JsonRoute> m_JsonRoutes;
+    std::vector<JsonDynamicRoute> m_JsonDynamicRoutes;
     CallbackHandler m_notFoundHandler;
     CallbackHandler m_notAllowedHandler;
 };

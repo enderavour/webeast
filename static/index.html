@@ -20,6 +20,15 @@
         })
         .then(resp => resp.json())
         .then(data => alert(JSON.stringify(data)));
+
+        fetch("http://127.0.0.1:8080/jsond/{}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+        })
+        .then(resp => resp.json())
+        .then(data => console.log(data));
     </script>
 </body>
 </html>

@@ -84,6 +84,16 @@ void Router::register_json(const std::string &path, HttpMethods method, JsonCall
 
 }
 
+void Router::register_json_dynamic(const std::string &path, HttpMethods method, JsonDynamicCallbackHandler &&handler)
+{
+    std::string regex_path = path;
+    boost::replace_all(regex_path, "{", "([^/]+");
+    boost::replace_all(regex_path, "}", ")");
+    regex_path = "^" + regex_path + "$";
+
+    m_JsonDynamicRoutes.emplace_back(boost::regex(regex_path), method, handler);
+}
+
 void Router::set_404_handler(CallbackHandler &&callback)
 {
     m_notFoundHandler = std::move(callback);
@@ -128,7 +138,10 @@ bool Router::dispatch(const Request<std::string> &req, Response<std::string> &re
 }
 
 
-std::pair<int32_t, std::variant<CallbackHandler, DynamicCallbackHandler, JsonCallbackHandler>> 
+std::pair<int32_t, 
+std::variant<
+CallbackHandler, DynamicCallbackHandler, 
+JsonCallbackHandler, JsonDynamicCallbackHandler>> 
 Router::get_handler(const std::string &path, HttpMethods method, boost::smatch &out_match) const
 {
     if ((int32_t)method >= 5)
@@ -137,7 +150,31 @@ Router::get_handler(const std::string &path, HttpMethods method, boost::smatch &
         {
             if (jroute.path == path && jroute.method == method)
                 return {2, jroute.handler};
-        }      
+        }
+
+        for (const auto &jdroute: m_JsonDynamicRoutes)
+        {
+            if (jdroute.method != method)
+            continue;
+
+            boost::smatch match;
+            if (boost::regex_match(path, match, jdroute.pattern))
+            {
+                out_match = match;
+                return {3, jdroute.handler};
+            }
+            out_match = match;
+        }
+
+#ifdef LOGGING_ENABLED_STDOUT
+    logger::warn(std::format("Dispatch: The provided JSON path is not found: {}", path));
+#elifdef LOGGING_ENABLED_FILE
+    logger::warn(
+        defaults::LOG_FILE_HANDLE,
+        std::format("Dispatch: The provided JSON path is not found: {}", path)
+    );
+#endif
+    return {0, m_notFoundHandler};
     }
 
     auto callbacks_it = m_Callbacks.find(path);
