@@ -25,7 +25,6 @@ int32_t main()
     Router router;
     server.include_router(router);
     server.get("/", STATIC(static_dir, "index.html"));
-#if 0
     server.get("/pic", STATIC(static_dir, "pic.html"));
     server.put("/", [&static_dir](const Request<std::string> &request, Response<std::string> &response) {
         logger::debug(std::format("Body response: {}", request.m_Body));
@@ -80,7 +79,6 @@ int32_t main()
             response.set_header("Content-Type", "application/json");
         }
     );
-#endif
     server.post("/jsond/{}", 
         [](const Request<nlohmann::json> &request, Response<nlohmann::json> &response, boost::smatch &_match)
         {
@@ -90,6 +88,26 @@ int32_t main()
                 {"status", 200},
                 {"response", json_matched}
             });           
+
+            logger::info(std::format("JSON Object: {}", json_obj.dump()));
+
+            response.set_status_code(HttpStatus::OK);
+            response.set_body(json_obj);
+            response.set_header("Content-Length", std::to_string(
+               json_obj.dump().size()
+            ));
+            response.set_header("Content-Type", "application/json");
+        }
+    );
+    server.get("/jsond/{}", 
+        [](const Request<nlohmann::json> &request, Response<nlohmann::json> &response, boost::smatch &_match)
+        {
+            auto json_matched = dynamic_get_match(_match, 1);
+
+            auto json_obj = nlohmann::json::object({
+                {"status", 200},
+                {"response", json_matched}
+            });         
 
             response.set_status_code(HttpStatus::OK);
             response.set_body(json_obj);

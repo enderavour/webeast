@@ -8,7 +8,7 @@
 <body>
     <h1>Welcome to the main page of the server!</h1>
     <script>
-        fetch("http://127.0.0.1:8080/jsonp", {
+        /* fetch("http://127.0.0.1:8080/jsonp", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -19,13 +19,14 @@
             })
         })
         .then(resp => resp.json())
-        .then(data => alert(JSON.stringify(data)));
+        .then(data => alert(JSON.stringify(data))); */
 
-        fetch("http://127.0.0.1:8080/jsond/{}", {
+        fetch("http://127.0.0.1:8080/jsond/hello", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
+            body: JSON.stringify({ test: 123 })
         })
         .then(resp => resp.json())
         .then(data => console.log(data));

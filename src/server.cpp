@@ -499,7 +499,7 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
 
             std::string response_payload;
 
-            if (handler_pair.first == 2)
+            if (handler_pair.first == 2 || handler_pair.first == 3)
                 response_payload = serialize_response(j_response);
             else
                 response_payload = serialize_response(response);
