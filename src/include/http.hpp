@@ -8,6 +8,13 @@
 #include <boost/url.hpp>
 #include <nlohmann/json.hpp>
 
+#ifdef _WIN32 
+#undef DELETE
+#undef GET
+#undef POST
+#undef PUT
+#endif
+
 using QueryParams = std::unordered_map<std::string, std::string>;
 
 enum class HttpMethods: int32_t

@@ -139,8 +139,7 @@ bool Router::dispatch(const Request<std::string> &req, Response<std::string> &re
 
 
 std::pair<int32_t, 
-std::variant<
-CallbackHandler, DynamicCallbackHandler, 
+std::variant<CallbackHandler, DynamicCallbackHandler, 
 JsonCallbackHandler, JsonDynamicCallbackHandler>> 
 Router::get_handler(const std::string &path, HttpMethods method, boost::smatch &out_match) const
 {

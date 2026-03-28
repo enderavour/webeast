@@ -14,7 +14,7 @@ public:
     Database() = delete;
     Database(const std::filesystem::path &path)
     {
-        if (sqlite3_open(path.c_str(), &m_Conn) != SQLITE_OK)
+        if (sqlite3_open(path.string().c_str(), &m_Conn) != SQLITE_OK)
         {
     #ifdef LOGGING_ENABLED_STDOUT
         logger::error(

@@ -50,6 +50,9 @@ private:
     tcp::acceptor m_Acceptor;
     ThreadPool m_Pool;
     void process_connection(std::shared_ptr<tcp::socket> socket);
+    boost::asio::awaitable<void> process_connection_async(std::shared_ptr<tcp::socket> socket);
+    void run_sync();
+    boost::asio::awaitable<void> run_async();
 };
 
 #endif
