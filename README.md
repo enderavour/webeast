@@ -34,7 +34,7 @@ cd webeast
 mkdir build && cd build
 cmake ..
 make
-./server
+./webeast
 ```
 To download, build and run application under Windows:
 1. Download and bootstrap vcpkg:
@@ -52,5 +52,9 @@ cmake --preset default
 4. Navigate into build directory and run Ninja to compile the project:
 ```
 cd build && ninja
+```
+5. Run
+```
+.\webeast
 ```
 - Distribution, forking and contributions into project are welcomed.
