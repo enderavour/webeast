@@ -20,8 +20,8 @@
 - The ORM was moved fully to headers, in order to avoid multiple template instantiationss
 - Added static JSON support (nlohmann::json)
 - Added dynamic JSON support (nlohmann::json)
-- Added partial async handling of connection, using coroutines with Boost.Asio. They are not supported fully yet. Available to compile by defining corresponding macros: WEBEAST_SERVER_ASYNC. 
-- The default, synchronous thread pool version was moved under definition of WEBEAST_SERVER_SYNC, which is defined by default.
+- Added partial async handling of connection, using coroutines with Boost.Asio. They are not supported fully yet. Available to compile by defining corresponding macros: WEBEAST_SERVER_ASYNC (Defined by default).
+- The default, synchronous thread pool version was moved under definition of WEBEAST_SERVER_SYNC.
 - Fixed asynchronous version of the server, now supports every kind of route. 
 - Fixed user addition to database, now user addition works correctly.
 
