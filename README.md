@@ -5,11 +5,8 @@
 ### Description
 - (The project was built using LLVM (Clang++), C++23 and Boost.Asio)
 - Currently the project is built using MSVC on Windows 10.
-- It supports only one client at current period, planned to be extended with thread pool and coroutines in future
-- In future will support regex parsing of routing and static file serving
 - Added thread pool support (25 clients maximum)
 - Added static file serving, static HTML pages
-- Fixed body parsing on PUT, POST requests
 - Added PUT, DELETE requests
 - Added keep-alive support 
 - Added support of dynamic path arguments
@@ -20,10 +17,8 @@
 - The ORM was moved fully to headers, in order to avoid multiple template instantiationss
 - Added static JSON support (nlohmann::json)
 - Added dynamic JSON support (nlohmann::json)
-- Added partial async handling of connection, using coroutines with Boost.Asio. They are not supported fully yet. Available to compile by defining corresponding macros: WEBEAST_SERVER_ASYNC (Defined by default).
+- Added partial async handling of connection, using coroutines with Boost.Asio. Available to compile by defining corresponding macros: WEBEAST_SERVER_ASYNC (Defined by default).
 - The default, synchronous thread pool version was moved under definition of WEBEAST_SERVER_SYNC.
-- Fixed asynchronous version of the server, now supports every kind of route. 
-- Fixed user addition to database, now user addition works correctly.
 
 ### TODO
 - Cleanup the code
