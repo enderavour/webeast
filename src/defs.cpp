@@ -8,15 +8,15 @@ namespace defaults
     const std::filesystem::path DB_PATH = "../db/user.sqlite3";
     std::ofstream LOG_FILE_HANDLE;
 
-    void default_404_handler(const Request<std::string>&, Response<std::string> &res)
+    void default_404_handler(const http::request<std::string>&, http::response_builder<std::string> &res)
     {
-        res.set_status_code(HttpStatus::NotFound);
+        res.set_status_code(http::http_status::NotFound);
         res.set_body("404 Not Found");
     }
 
-    void default_405_handler(const Request<std::string>&, Response<std::string> &res)
+    void default_405_handler(const http::request<std::string>&, http::response_builder<std::string> &res)
     {
-        res.set_status_code(HttpStatus::MethodNotAllowed);
+        res.set_status_code(http::http_status::MethodNotAllowed);
         res.set_body("405 Not Allowed");
     }  
 }

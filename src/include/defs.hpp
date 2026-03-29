@@ -15,8 +15,8 @@ namespace defaults
     extern const std::filesystem::path DB_PATH;
     extern std::ofstream LOG_FILE_HANDLE;
 
-    void default_404_handler(const Request<std::string>&, Response<std::string> &res);
-    void default_405_handler(const Request<std::string>&, Response<std::string> &res);
+    void default_404_handler(const http::request<std::string>&, http::response_builder<std::string> &res);
+    void default_405_handler(const http::request<std::string>&, http::response_builder<std::string> &res);
 }
 
 #endif

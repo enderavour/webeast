@@ -10,57 +10,65 @@
 #include <nlohmann/json.hpp>
 #include <variant>
 
-using CallbackHandler = std::function<void(const Request<std::string>&, Response<std::string>&)>;
-using DynamicCallbackHandler = std::function<void(const Request<std::string>&, Response<std::string>&, boost::smatch&)>;
-using JsonCallbackHandler = std::function<void(const Request<nlohmann::json>&, Response<nlohmann::json>&)>;
-using JsonDynamicCallbackHandler = std::function<void(const Request<nlohmann::json>&, Response<nlohmann::json>&, boost::smatch&)>;
+namespace rt
+{
 
-struct DynamicRoute
+using callback_handler = std::function<void(const http::request<std::string>&, http::response_builder<std::string>&)>;
+using dynamic_callback_handler = 
+std::function<void(const http::request<std::string>&, http::response_builder<std::string>&, boost::smatch&)>;
+using json_callback_handler = 
+std::function<void(const http::request<nlohmann::json>&, http::response_builder<nlohmann::json>&)>;
+using json_dynamic_callback_handler =
+ std::function<void(const http::request<nlohmann::json>&, http::response_builder<nlohmann::json>&, boost::smatch&)>;
+
+struct dynamic_route
 {
     boost::regex pattern;
-    HttpMethods method;
-    DynamicCallbackHandler handler;
+    http::http_method method;
+    dynamic_callback_handler handler;
 };
 
-struct JsonRoute
+struct json_route
 {
     std::string path;
-    HttpMethods method;
-    JsonCallbackHandler handler;
+    http::http_method method;
+    json_callback_handler handler;
 };
 
-struct JsonDynamicRoute
+struct json_dynamic_route
 {
     boost::regex pattern;
-    HttpMethods method;
-    JsonDynamicCallbackHandler handler;
+    http::http_method method;
+    json_dynamic_callback_handler handler;
 };
 
-class Router
+class router
 {
 public:
-    Router();
-    void register_handler(const std::string &path, HttpMethods method, CallbackHandler &&callback);
-    void remove_handler(const std::string &path, HttpMethods method);
-    void register_dynamic(const std::string &path, HttpMethods method, DynamicCallbackHandler &&handler);
-    void register_json(const std::string &path, HttpMethods method, JsonCallbackHandler &&handler);
-    void register_json_dynamic(const std::string &path, HttpMethods method, JsonDynamicCallbackHandler &&handler);
-    void set_404_handler(CallbackHandler &&callback);
-    void set_405_handler(CallbackHandler &&callback);
+    router();
+    void register_handler(const std::string &path, http::http_method method, callback_handler &&callback);
+    void remove_handler(const std::string &path, http::http_method method);
+    void register_dynamic(const std::string &path, http::http_method method, dynamic_callback_handler &&handler);
+    void register_json(const std::string &path, http::http_method method, json_callback_handler &&handler);
+    void register_json_dynamic(const std::string &path, http::http_method method, json_dynamic_callback_handler &&handler);
+    void set_404_handler(callback_handler &&callback);
+    void set_405_handler(callback_handler &&callback);
     std::pair<int32_t, 
     std::variant<
-    CallbackHandler, DynamicCallbackHandler, JsonCallbackHandler, 
-    JsonDynamicCallbackHandler>> 
-    get_handler(const std::string &path, HttpMethods method, boost::smatch &out_match) const;
-    bool dispatch(const Request<std::string> &req, Response<std::string> &res);
-    ~Router();
+    callback_handler, dynamic_callback_handler, json_callback_handler, 
+    json_dynamic_callback_handler>> 
+    get_handler(const std::string &path, http::http_method method, boost::smatch &out_match) const;
+    bool dispatch(const http::request<std::string> &req, http::response_builder<std::string> &res);
+    ~router();
 private:
-    std::map<std::string, std::map<HttpMethods, CallbackHandler>> m_Callbacks;
-    std::vector<DynamicRoute> m_DynamicRoutes;
-    std::vector<JsonRoute> m_JsonRoutes;
-    std::vector<JsonDynamicRoute> m_JsonDynamicRoutes;
-    CallbackHandler m_notFoundHandler;
-    CallbackHandler m_notAllowedHandler;
+    std::map<std::string, std::map<http::http_method, callback_handler>> m_Callbacks;
+    std::vector<dynamic_route> m_DynamicRoutes;
+    std::vector<json_route> m_JsonRoutes;
+    std::vector<json_dynamic_route> m_JsonDynamicRoutes;
+    callback_handler m_notFoundHandler;
+    callback_handler m_notAllowedHandler;
+};
+
 };
 
 #endif

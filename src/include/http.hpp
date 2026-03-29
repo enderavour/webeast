@@ -15,26 +15,29 @@
 #undef PUT
 #endif
 
-using QueryParams = std::unordered_map<std::string, std::string>;
-
-enum class HttpMethods: int32_t
+namespace http
 {
-    GET,
-    POST,
-    PUT,
-    DELETE,
-    UNKNOWN,
+
+using query_params = std::unordered_map<std::string, std::string>;
+
+enum class http_method: int32_t
+{
+    Get,
+    Post,
+    Put,
+    Delete,
+    Unknown,
     // Versions for returning JSON version of method
-    JSON_GET,
-    JSON_POST,
-    JSON_PUT,
-    JSON_DELETE,
-    JSON_UNKNOWN
+    Json_Get,
+    Json_Post,
+    Json_Put,
+    Json_Delete,
+    Json_Unknown
 };
 
-enum class HttpStatus
+enum class http_status
 {
-    OK = 200,
+    Ok = 200,
     Created = 201,
     BadRequest = 400,
     NotFound = 404,
@@ -44,9 +47,9 @@ enum class HttpStatus
 template<class T>
 requires std::is_convertible_v<T, std::string> || 
 std::is_same_v<std::decay_t<T>, nlohmann::json>
-struct Request
+struct request
 {
-    HttpMethods m_Method;
+    http_method m_Method;
     std::string m_Path;
     std::string m_HttpVersion;
 
@@ -59,34 +62,36 @@ struct Request
 template<class T>
 requires std::is_convertible_v<T, std::string> || 
 std::is_same_v<std::decay_t<T>, nlohmann::json>
-class Response
+class response_builder
 {
 public:
-    using BodyType = std::decay_t<T>;
+    using body_type = std::decay_t<T>;
 
-    Response();
-    Response(HttpStatus statusCode, T &&body, const std::map<std::string, std::string> &headers);
+    response_builder();
+    response_builder(http_status statusCode, T &&body, const std::map<std::string, std::string> &headers);
     
-    void set_status_code(HttpStatus code);
+    void set_status_code(http_status code);
     void set_header(const std::string &key, const std::string &value);
     void set_body(const T &body);
 
-    HttpStatus get_status_code() const;
+    http_status get_status_code() const;
     std::map<std::string, std::string> get_headers() const;
-    BodyType get_body() const;
+    body_type get_body() const;
 
 private:
-    HttpStatus m_StatusCode;
-    BodyType m_Body;
+    http_status m_StatusCode;
+    body_type m_Body;
     std::map<std::string, std::string> m_Headers;
 };
 
-Request<std::string> deserialize_request(const std::string &source);
-std::string serialize_response(const Response<std::string> &resp);
-std::string serialize_response(const Response<nlohmann::json> &resp);
+request<std::string> deserialize_request(const std::string &source);
+std::string serialize_response(const response_builder<std::string> &resp);
+std::string serialize_response(const response_builder<nlohmann::json> &resp);
 
 #define dynamic_get_match(match, index) match[index].str()
 
-QueryParams parse_body_params(std::string_view url);
+query_params parse_body_params(std::string_view url);
+
+};
 
 #endif

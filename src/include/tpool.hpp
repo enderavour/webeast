@@ -11,11 +11,14 @@
 
 using boost::asio::ip::tcp;
 
-class ThreadPool
+namespace tpool
+{
+
+class thread_pool
 {
 public:
-    ThreadPool(int32_t worker_capacity);
-    ~ThreadPool();
+    thread_pool(int32_t worker_capacity);
+    ~thread_pool();
     void add_task(std::function<void()> task);
     int32_t active_tasks_count() const;
 private:
@@ -24,6 +27,8 @@ private:
     std::mutex m_Mutex;
     std::condition_variable m_CondVar;
     bool m_Stop = false;
+};
+
 };
 
 #endif

@@ -4,23 +4,28 @@
 #include <filesystem>
 #include <string>
 
-class StaticDir
+namespace sd
+{
+
+class static_dir
 {
 public:
-    StaticDir();
-    StaticDir(const std::filesystem::path &sdir_path);
+    static_dir();
+    static_dir(const std::filesystem::path &sdir_path);
     void set_static_dir_path(const std::filesystem::path &sdir_path);
     std::optional<std::string> get_file(const std::filesystem::path &file_name);
 private:
     std::filesystem::path static_dir_path;
 };
 
-#define STATIC(var, fname) \
-    [&var](const Request<std::string> &request, Response<std::string> &response) \
+#define static_file(var, fname) \
+    [&var](const http::request<std::string> &request, http::response_builder<std::string> &response) \
     { \
-        response.set_status_code(HttpStatus::OK); \
-        response.set_body(static_dir.get_file(fname).value_or("<h2>Static dir error</h2>")); \
+        response.set_status_code(http::http_status::Ok); \
+        response.set_body(var.get_file(fname).value_or("<h2>Static dir error</h2>")); \
         response.set_header("Content-Type", "text/html"); \
-    } \
+    } 
+
+};
 
 #endif

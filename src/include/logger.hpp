@@ -22,6 +22,4 @@ namespace logger
     void open_log_file(const std::filesystem::path &fname);  
 }
 
-
-
 #endif

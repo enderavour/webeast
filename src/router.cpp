@@ -4,7 +4,7 @@
 #include "include/logger.hpp"
 #include <boost/algorithm/string/replace.hpp>
 
-Router::Router()
+rt::router::router()
 {
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info("Created Router, filled with default 404/405 callbacks");
@@ -15,7 +15,7 @@ Router::Router()
     m_notAllowedHandler = defaults::default_405_handler;
 }
 
-void Router::register_handler(const std::string &path, HttpMethods method, CallbackHandler &&callback)
+void rt::router::register_handler(const std::string &path, http::http_method method, rt::callback_handler &&callback)
 {
     m_Callbacks[path][method] = std::move(callback);
 #ifdef LOGGING_ENABLED_STDOUT
@@ -25,7 +25,7 @@ void Router::register_handler(const std::string &path, HttpMethods method, Callb
 #endif
 }
 
-void Router::remove_handler(const std::string &path, HttpMethods method)
+void rt::router::remove_handler(const std::string &path, http::http_method method)
 {
     auto entry = m_Callbacks.find(path);
     if (entry == m_Callbacks.end())
@@ -56,7 +56,7 @@ void Router::remove_handler(const std::string &path, HttpMethods method)
 #endif
 }
 
-void Router::register_dynamic(const std::string &path, HttpMethods method, DynamicCallbackHandler &&callback)
+void rt::router::register_dynamic(const std::string &path, http::http_method method, rt::dynamic_callback_handler &&callback)
 {
     std::string regex_path = path;
     boost::replace_all(regex_path, "{", "([^/]+");
@@ -71,7 +71,7 @@ void Router::register_dynamic(const std::string &path, HttpMethods method, Dynam
 #endif
 }
 
-void Router::register_json(const std::string &path, HttpMethods method, JsonCallbackHandler &&handler)
+void rt::router::register_json(const std::string &path, http::http_method method, rt::json_callback_handler &&handler)
 {
     m_JsonRoutes.emplace_back(path, method, handler);
 
@@ -84,7 +84,7 @@ void Router::register_json(const std::string &path, HttpMethods method, JsonCall
 
 }
 
-void Router::register_json_dynamic(const std::string &path, HttpMethods method, JsonDynamicCallbackHandler &&handler)
+void rt::router::register_json_dynamic(const std::string &path, http::http_method method, rt::json_dynamic_callback_handler &&handler)
 {
     std::string regex_path = path;
     boost::replace_all(regex_path, "{", "([^/]+");
@@ -94,17 +94,17 @@ void Router::register_json_dynamic(const std::string &path, HttpMethods method, 
     m_JsonDynamicRoutes.emplace_back(boost::regex(regex_path), method, handler);
 }
 
-void Router::set_404_handler(CallbackHandler &&callback)
+void rt::router::set_404_handler(rt::callback_handler &&callback)
 {
     m_notFoundHandler = std::move(callback);
 }
 
-void Router::set_405_handler(CallbackHandler &&callback)
+void rt::router::set_405_handler(rt::callback_handler &&callback)
 {
     m_notAllowedHandler = std::move(callback);
 }
 
-bool Router::dispatch(const Request<std::string> &req, Response<std::string> &res)
+bool rt::router::dispatch(const http::request<std::string> &req, http::response_builder<std::string> &res)
 {
     auto path_it = m_Callbacks.find(req.m_Path);
     if (path_it == m_Callbacks.end())
@@ -115,7 +115,7 @@ bool Router::dispatch(const Request<std::string> &req, Response<std::string> &re
     logger::warn(defaults::LOG_FILE_HANDLE, std::format("Dispatch: The provided path is not found: {}", req.m_Path));
 #endif
         m_notFoundHandler(req, res);
-        res.set_status_code(HttpStatus::NotFound);
+        res.set_status_code(http::http_status::NotFound);
         return false;
     }
 
@@ -129,7 +129,7 @@ bool Router::dispatch(const Request<std::string> &req, Response<std::string> &re
     logger::warn(defaults::LOG_FILE_HANDLE, std::format("Dispatch: The provided path is not found: {}", req.m_Path));
 #endif
         m_notAllowedHandler(req, res);
-        res.set_status_code(HttpStatus::MethodNotAllowed);
+        res.set_status_code(http::http_status::MethodNotAllowed);
         return false;
     }
 
@@ -139,9 +139,9 @@ bool Router::dispatch(const Request<std::string> &req, Response<std::string> &re
 
 
 std::pair<int32_t, 
-std::variant<CallbackHandler, DynamicCallbackHandler, 
-JsonCallbackHandler, JsonDynamicCallbackHandler>> 
-Router::get_handler(const std::string &path, HttpMethods method, boost::smatch &out_match) const
+std::variant<rt::callback_handler, rt::dynamic_callback_handler, 
+rt::json_callback_handler, rt::json_dynamic_callback_handler>> 
+rt::router::get_handler(const std::string &path, http::http_method method, boost::smatch &out_match) const
 {
     if ((int32_t)method >= 5)
     {
@@ -222,7 +222,7 @@ Router::get_handler(const std::string &path, HttpMethods method, boost::smatch &
     return {0, m_notFoundHandler};
 }
 
-Router::~Router()
+rt::router::~router()
 {
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info("Terminating Router");

@@ -13,29 +13,29 @@
 
 int32_t main()
 {
-    ServerInstance server("127.0.0.1", 8080);
-    StaticDir static_dir(defaults::STATIC_DIR_PATH);
+    sv::server server("127.0.0.1", 8080);
+    sd::static_dir static_dir(defaults::STATIC_DIR_PATH);
 #ifdef LOGGING_ENABLED_FILE
     logger::open_log_file(defaults::LOG_FILE_PATH);
 #endif
 
-    orm::Database db(defaults::DB_PATH);
+    orm::database db(defaults::DB_PATH);
     orm::create_table<User>(db);
 
-    Router router;
+    rt::router router;
     server.include_router(router);
-    server.get("/", STATIC(static_dir, "index.html"));
-    server.get("/pic", STATIC(static_dir, "pic.html"));
-    server.put("/", [&static_dir](const Request<std::string> &request, Response<std::string> &response) {
+    server.get("/", static_file(static_dir, "index.html"));
+    server.get("/pic", static_file(static_dir, "pic.html"));
+    server.put("/", [&static_dir](const http::request<std::string> &request, http::response_builder<std::string> &response) {
         logger::debug(std::format("Body response: {}", request.m_Body));
         
-        response.set_status_code(HttpStatus::OK);
+        response.set_status_code(http::http_status::Ok);
         response.set_body(request.m_Body);
         response.set_header("Content-Type", "text/plain");
     });
-    server.get("/form", STATIC(static_dir, "form.html"));
-    server.post("/user", [&static_dir, &db](const Request<std::string> &request, Response<std::string> &response) {
-        auto parsed = parse_body_params(request.m_Body);
+    server.get("/form", static_file(static_dir, "form.html"));
+    server.post("/user", [&static_dir, &db](const http::request<std::string> &request, http::response_builder<std::string> &response) {
+        auto parsed = http::parse_body_params(request.m_Body);
         User user;
         for (const auto &[k, v]: parsed)
         {
@@ -49,22 +49,22 @@ int32_t main()
 
         logger::info("User was successfully added to database");
 
-        response.set_status_code(HttpStatus::OK);
+        response.set_status_code(http::http_status::Ok);
         response.set_body("User added to database");
         response.set_header("Content-Type", "text/html");
     });
     server.get("/greet/{}", 
-        [](const Request<std::string> &request, Response<std::string> &response, boost::smatch &_match)
+        [](const http::request<std::string> &request, http::response_builder<std::string> &response, boost::smatch &_match)
         {
             auto matched = dynamic_get_match(_match, 1);
 
-            response.set_status_code(HttpStatus::OK);
+            response.set_status_code(http::http_status::Ok);
             response.set_body(std::format("<h1>Hello, {}!</h1>", matched));
             response.set_header("Content-Type", "text/html");
         }
     );
     server.post("/jsonp",
-        [](const Request<nlohmann::json> &request, Response<nlohmann::json> &response)
+        [](const http::request<nlohmann::json> &request, http::response_builder<nlohmann::json> &response)
         {
             logger::info(
                 std::format("Received JSON from server: {}", request.m_Body.dump())
@@ -74,7 +74,7 @@ int32_t main()
                 {"response", "Ok!"}
             });           
 
-            response.set_status_code(HttpStatus::OK);
+            response.set_status_code(http::http_status::Ok);
             response.set_body(json_obj);
             response.set_header("Content-Length", std::to_string(
                json_obj.dump().size()
@@ -83,7 +83,7 @@ int32_t main()
         }
     );
     server.post("/jsond/{}", 
-        [](const Request<nlohmann::json> &request, Response<nlohmann::json> &response, boost::smatch &_match)
+        [](const http::request<nlohmann::json> &request, http::response_builder<nlohmann::json> &response, boost::smatch &_match)
         {
             auto json_matched = dynamic_get_match(_match, 1);
 
@@ -94,7 +94,7 @@ int32_t main()
 
             logger::info(std::format("JSON Object: {}", json_obj.dump()));
 
-            response.set_status_code(HttpStatus::OK);
+            response.set_status_code(http::http_status::Ok);
             response.set_body(json_obj);
             response.set_header("Content-Length", std::to_string(
                json_obj.dump().size()
@@ -103,7 +103,7 @@ int32_t main()
         }
     );
     server.get("/jsond/{}", 
-        [](const Request<nlohmann::json> &request, Response<nlohmann::json> &response, boost::smatch &_match)
+        [](const http::request<nlohmann::json> &request, http::response_builder<nlohmann::json> &response, boost::smatch &_match)
         {
             auto json_matched = dynamic_get_match(_match, 1);
 
@@ -112,7 +112,7 @@ int32_t main()
                 {"response", json_matched}
             });         
 
-            response.set_status_code(HttpStatus::OK);
+            response.set_status_code(http::http_status::Ok);
             response.set_body(json_obj);
             response.set_header("Content-Length", std::to_string(
                json_obj.dump().size()

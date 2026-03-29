@@ -8,11 +8,11 @@
 namespace orm
 {
 
-class Database
+class database
 {
 public:
-    Database() = delete;
-    Database(const std::filesystem::path &path)
+    database() = delete;
+    database(const std::filesystem::path &path)
     {
         if (sqlite3_open(path.string().c_str(), &m_Conn) != SQLITE_OK)
         {
@@ -29,7 +29,7 @@ public:
         }
     }
     
-    ~Database()
+    ~database()
     {
     #ifdef LOGGING_ENABLED_STDOUT
         logger::info("Closing database handle");

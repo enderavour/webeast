@@ -5,16 +5,16 @@ namespace orm
 {
 
 template<typename Class, typename Field>
-struct Column
+struct _column
 {
     const char *name;
     Field Class::*member;
 };
 
 template<typename Class, typename Field>
-constexpr Column<Class, Field> column(const char *name, Field Class::*member)
+constexpr _column<Class, Field> column(const char *name, Field Class::*member)
 {
-    return Column<Class, Field>{name, member};
+    return _column<Class, Field>{name, member};
 }
 
 };

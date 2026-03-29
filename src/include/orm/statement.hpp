@@ -7,11 +7,11 @@
 namespace orm
 {
  
-class Statement
+class statement
 {
 public:
-    Statement() = delete;
-    Statement(sqlite3 *db, const std::string &sql_query)
+    statement() = delete;
+    statement(sqlite3 *db, const std::string &sql_query)
     {
         sqlite3_prepare_v2(db, sql_query.c_str(), -1, &stmt, nullptr);
     }
@@ -25,7 +25,7 @@ public:
         return stmt;
     }
 
-    ~Statement()
+    ~statement()
     {
         if (stmt)
             sqlite3_finalize(stmt);

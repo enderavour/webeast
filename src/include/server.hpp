@@ -9,50 +9,55 @@
 
 using boost::asio::ip::tcp;
 
-class ServerInstance
+namespace sv
+{
+
+class server
 {
 public:
-    ServerInstance() = delete;
-    ServerInstance(const std::string &addr, int32_t port);
-    ServerInstance(const std::string &addr, int32_t port, Router router);
-    void include_router(Router router);
+    server() = delete;
+    server(const std::string &addr, int32_t port);
+    server(const std::string &addr, int32_t port, rt::router router);
+    void include_router(rt::router router);
     // Static
-    void get(const std::string &path, CallbackHandler &&handler);
-    void post(const std::string &path, CallbackHandler &&handler);
-    void put(const std::string &path, CallbackHandler &&handler);
-    void _delete(const std::string &path, CallbackHandler &&handler);
+    void get(const std::string &path, rt::callback_handler &&handler);
+    void post(const std::string &path, rt::callback_handler &&handler);
+    void put(const std::string &path, rt::callback_handler &&handler);
+    void _delete(const std::string &path, rt::callback_handler &&handler);
 
     // Dynamic
-    void get(const std::string &path, DynamicCallbackHandler &&handler);
-    void post(const std::string &path, DynamicCallbackHandler &&handler);
-    void put(const std::string &path, DynamicCallbackHandler &&handler);
-    void _delete(const std::string &path, DynamicCallbackHandler &&handler);
+    void get(const std::string &path, rt::dynamic_callback_handler &&handler);
+    void post(const std::string &path, rt::dynamic_callback_handler &&handler);
+    void put(const std::string &path, rt::dynamic_callback_handler &&handler);
+    void _delete(const std::string &path, rt::dynamic_callback_handler &&handler);
 
     // Json
-    void get(const std::string &path, JsonCallbackHandler&&handler);
-    void post(const std::string &path, JsonCallbackHandler &&handler);
-    void put(const std::string &path, JsonCallbackHandler &&handler);
-    void _delete(const std::string &path, JsonCallbackHandler &&handler);
+    void get(const std::string &path, rt::json_callback_handler &&handler);
+    void post(const std::string &path, rt::json_callback_handler &&handler);
+    void put(const std::string &path, rt::json_callback_handler &&handler);
+    void _delete(const std::string &path, rt::json_callback_handler &&handler);
 
     // Json Dynamic
-    void get(const std::string &path, JsonDynamicCallbackHandler &&handler);
-    void post(const std::string &path, JsonDynamicCallbackHandler &&handler);
-    void put(const std::string &path, JsonDynamicCallbackHandler &&handler);
-    void _delete(const std::string &path, JsonDynamicCallbackHandler &&handler);
+    void get(const std::string &path, rt::json_dynamic_callback_handler &&handler);
+    void post(const std::string &path, rt::json_dynamic_callback_handler &&handler);
+    void put(const std::string &path, rt::json_dynamic_callback_handler &&handler);
+    void _delete(const std::string &path, rt::json_dynamic_callback_handler &&handler);
 
     void start();
-    ~ServerInstance();
+    ~server();
 private:
-    Router m_Router;
+    rt::router m_Router;
     std::string m_Addr;
     int32_t m_Port;
     boost::asio::io_context m_AsioCTX;
     tcp::acceptor m_Acceptor;
-    ThreadPool m_Pool;
+    tpool::thread_pool m_Pool;
     void process_connection(std::shared_ptr<tcp::socket> socket);
     boost::asio::awaitable<void> process_connection_async(std::shared_ptr<tcp::socket> socket);
     void run_sync();
     boost::asio::awaitable<void> run_async();
+};
+
 };
 
 #endif

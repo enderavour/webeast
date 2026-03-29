@@ -2,7 +2,7 @@
 #include "include/tpool.hpp"
 #include "include/defs.hpp"
 
-ThreadPool::ThreadPool(int32_t worker_capacity = defaults::CLIENTS_MAX_CAPACITY)
+tpool::thread_pool::thread_pool(int32_t worker_capacity = defaults::CLIENTS_MAX_CAPACITY)
 {
     m_Workers.emplace_back([this] {
         while (true)
@@ -26,7 +26,7 @@ ThreadPool::ThreadPool(int32_t worker_capacity = defaults::CLIENTS_MAX_CAPACITY)
     });
 }
 
-ThreadPool::~ThreadPool()
+tpool::thread_pool::~thread_pool()
 {
     {
         std::unique_lock<std::mutex> lock(m_Mutex);
@@ -39,7 +39,7 @@ ThreadPool::~ThreadPool()
         thread.join();
 }
 
-void ThreadPool::add_task(std::function<void()> task)
+void tpool::thread_pool::add_task(std::function<void()> task)
 {
     {
         std::unique_lock<std::mutex> lock(m_Mutex);
@@ -48,7 +48,7 @@ void ThreadPool::add_task(std::function<void()> task)
     m_CondVar.notify_one();
 }
 
-int32_t ThreadPool::active_tasks_count() const
+int32_t tpool::thread_pool::active_tasks_count() const
 {
     return m_Tasks.size();
 }

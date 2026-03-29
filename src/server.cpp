@@ -10,7 +10,7 @@
 using boost::asio::ip::make_address;
 using json = nlohmann::json;
 
-ServerInstance::ServerInstance(const std::string &addr, int32_t port): 
+sv::server::server(const std::string &addr, int32_t port): 
 m_Addr(addr), m_Port(port), m_AsioCTX(1), m_Acceptor(m_AsioCTX, tcp::endpoint(
     make_address(addr), port)), m_Pool(defaults::CLIENTS_MAX_CAPACITY) 
 {
@@ -27,7 +27,7 @@ m_Addr(addr), m_Port(port), m_AsioCTX(1), m_Acceptor(m_AsioCTX, tcp::endpoint(
 #endif
 }
 
-ServerInstance::ServerInstance(const std::string &addr, int32_t port, Router router):
+sv::server::server(const std::string &addr, int32_t port, rt::router router):
 m_Router(router), m_Addr(addr), m_Port(port), m_Acceptor(m_AsioCTX, tcp::endpoint(
     make_address(addr), port)), m_Pool(defaults::CLIENTS_MAX_CAPACITY) 
 {
@@ -44,17 +44,17 @@ m_Router(router), m_Addr(addr), m_Port(port), m_Acceptor(m_AsioCTX, tcp::endpoin
 #endif
 }
 
-void ServerInstance::include_router(Router router)
+void sv::server::include_router(rt::router router)
 {
     m_Router = router;
 }
 
 // Static
-void ServerInstance::get(const std::string &path, CallbackHandler &&handler)
+void sv::server::get(const std::string &path, rt::callback_handler &&handler)
 {
     m_Router.register_handler(
-        path, HttpMethods::GET, 
-        std::forward<CallbackHandler>(handler)
+        path, http::http_method::Get, 
+        std::forward<rt::callback_handler>(handler)
     );
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
@@ -67,11 +67,11 @@ void ServerInstance::get(const std::string &path, CallbackHandler &&handler)
 #endif
 }
 
-void ServerInstance::post(const std::string &path, CallbackHandler &&handler)
+void sv::server::post(const std::string &path, rt::callback_handler &&handler)
 {
     m_Router.register_handler(
-        path, HttpMethods::POST, 
-        std::forward<CallbackHandler>(handler)
+        path, http::http_method::Post, 
+        std::forward<rt::callback_handler>(handler)
     );
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
@@ -84,11 +84,11 @@ void ServerInstance::post(const std::string &path, CallbackHandler &&handler)
 #endif
 }
 
-void ServerInstance::put(const std::string &path, CallbackHandler &&handler)
+void sv::server::put(const std::string &path, rt::callback_handler &&handler)
 {
     m_Router.register_handler(
-        path, HttpMethods::PUT, 
-        std::forward<CallbackHandler>(handler)
+        path, http::http_method::Put, 
+        std::forward<rt::callback_handler>(handler)
     );
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
@@ -101,11 +101,11 @@ void ServerInstance::put(const std::string &path, CallbackHandler &&handler)
 #endif
 }
 
-void ServerInstance::_delete(const std::string &path, CallbackHandler &&handler)
+void sv::server::_delete(const std::string &path, rt::callback_handler &&handler)
 {
     m_Router.register_handler(
-        path, HttpMethods::DELETE,
-        std::forward<CallbackHandler>(handler)
+        path, http::http_method::Delete,
+        std::forward<rt::callback_handler>(handler)
     );
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
@@ -119,11 +119,11 @@ void ServerInstance::_delete(const std::string &path, CallbackHandler &&handler)
 }
 
 // Dynamic
-void ServerInstance::get(const std::string &path, DynamicCallbackHandler &&handler)
+void sv::server::get(const std::string &path, rt::dynamic_callback_handler &&handler)
 {
     m_Router.register_dynamic(
-        path, HttpMethods::GET, 
-        std::forward<DynamicCallbackHandler>(handler)
+        path, http::http_method::Get, 
+        std::forward<rt::dynamic_callback_handler>(handler)
     );
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
@@ -136,11 +136,11 @@ void ServerInstance::get(const std::string &path, DynamicCallbackHandler &&handl
 #endif
 }
 
-void ServerInstance::post(const std::string &path, DynamicCallbackHandler &&handler)
+void sv::server::post(const std::string &path, rt::dynamic_callback_handler &&handler)
 {
     m_Router.register_dynamic(
-        path, HttpMethods::POST, 
-        std::forward<DynamicCallbackHandler>(handler)
+        path, http::http_method::Post, 
+        std::forward<rt::dynamic_callback_handler>(handler)
     );
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
@@ -153,11 +153,11 @@ void ServerInstance::post(const std::string &path, DynamicCallbackHandler &&hand
 #endif
 }
 
-void ServerInstance::put(const std::string &path, DynamicCallbackHandler &&handler)
+void sv::server::put(const std::string &path, rt::dynamic_callback_handler &&handler)
 {
     m_Router.register_dynamic(
-        path, HttpMethods::PUT, 
-        std::forward<DynamicCallbackHandler>(handler)
+        path, http::http_method::Put, 
+        std::forward<rt::dynamic_callback_handler>(handler)
     );
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
@@ -170,11 +170,11 @@ void ServerInstance::put(const std::string &path, DynamicCallbackHandler &&handl
 #endif
 }
 
-void ServerInstance::_delete(const std::string &path, DynamicCallbackHandler &&handler)
+void sv::server::_delete(const std::string &path, rt::dynamic_callback_handler &&handler)
 {
     m_Router.register_dynamic(
-        path, HttpMethods::DELETE,
-        std::forward<DynamicCallbackHandler>(handler)
+        path, http::http_method::Delete,
+        std::forward<rt::dynamic_callback_handler>(handler)
     );
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
@@ -188,11 +188,11 @@ void ServerInstance::_delete(const std::string &path, DynamicCallbackHandler &&h
 }
 
 // Json
-void ServerInstance::get(const std::string &path, JsonCallbackHandler &&handler)
+void sv::server::get(const std::string &path, rt::json_callback_handler &&handler)
 {
     m_Router.register_json(        
-        path, HttpMethods::JSON_GET, 
-        std::forward<JsonCallbackHandler>(handler)
+        path, http::http_method::Json_Get,
+        std::forward<rt::json_callback_handler>(handler)
     );
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
@@ -205,11 +205,11 @@ void ServerInstance::get(const std::string &path, JsonCallbackHandler &&handler)
 #endif
 }
 
-void ServerInstance::post(const std::string &path, JsonCallbackHandler &&handler)
+void sv::server::post(const std::string &path, rt::json_callback_handler &&handler)
 {
     m_Router.register_json(        
-        path, HttpMethods::JSON_POST, 
-        std::forward<JsonCallbackHandler>(handler)
+        path, http::http_method::Json_Post, 
+        std::forward<rt::json_callback_handler>(handler)
     );
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
@@ -222,11 +222,11 @@ void ServerInstance::post(const std::string &path, JsonCallbackHandler &&handler
 #endif
 }
 
-void ServerInstance::put(const std::string &path, JsonCallbackHandler &&handler)
+void sv::server::put(const std::string &path, rt::json_callback_handler &&handler)
 {
     m_Router.register_json(        
-        path, HttpMethods::JSON_PUT, 
-        std::forward<JsonCallbackHandler>(handler)
+        path, http::http_method::Json_Put, 
+        std::forward<rt::json_callback_handler>(handler)
     );
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
@@ -239,11 +239,11 @@ void ServerInstance::put(const std::string &path, JsonCallbackHandler &&handler)
 #endif
 }
 
-void ServerInstance::_delete(const std::string &path, JsonCallbackHandler &&handler)
+void sv::server::_delete(const std::string &path, rt::json_callback_handler &&handler)
 {
     m_Router.register_json(        
-        path, HttpMethods::JSON_DELETE, 
-        std::forward<JsonCallbackHandler>(handler)
+        path, http::http_method::Json_Delete, 
+        std::forward<rt::json_callback_handler>(handler)
     );
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info(std::format(
@@ -257,11 +257,11 @@ void ServerInstance::_delete(const std::string &path, JsonCallbackHandler &&hand
 }
 
 // Json Dynamic
-void ServerInstance::get(const std::string &path, JsonDynamicCallbackHandler &&handler)
+void sv::server::get(const std::string &path, rt::json_dynamic_callback_handler &&handler)
 {
     m_Router.register_json_dynamic(
-        path, HttpMethods::JSON_GET,
-        std::forward<JsonDynamicCallbackHandler>(handler)
+        path, http::http_method::Json_Get,
+        std::forward<rt::json_dynamic_callback_handler>(handler)
     );
 
 #ifdef LOGGING_ENABLED_STDOUT
@@ -275,11 +275,11 @@ void ServerInstance::get(const std::string &path, JsonDynamicCallbackHandler &&h
 #endif
 }
 
-void ServerInstance::post(const std::string &path, JsonDynamicCallbackHandler &&handler)
+void sv::server::post(const std::string &path, rt::json_dynamic_callback_handler &&handler)
 {
     m_Router.register_json_dynamic(
-        path, HttpMethods::JSON_POST,
-        std::forward<JsonDynamicCallbackHandler>(handler)
+        path, http::http_method::Json_Post,
+        std::forward<rt::json_dynamic_callback_handler>(handler)
     );
 
 #ifdef LOGGING_ENABLED_STDOUT
@@ -293,11 +293,11 @@ void ServerInstance::post(const std::string &path, JsonDynamicCallbackHandler &&
 #endif
 }
 
-void ServerInstance::put(const std::string &path, JsonDynamicCallbackHandler &&handler)
+void sv::server::put(const std::string &path, rt::json_dynamic_callback_handler &&handler)
 {
     m_Router.register_json_dynamic(
-        path, HttpMethods::JSON_PUT,
-        std::forward<JsonDynamicCallbackHandler>(handler)
+        path, http::http_method::Json_Put,
+        std::forward<rt::json_dynamic_callback_handler>(handler)
     );
 
 #ifdef LOGGING_ENABLED_STDOUT
@@ -311,11 +311,11 @@ void ServerInstance::put(const std::string &path, JsonDynamicCallbackHandler &&h
 #endif
 }
 
-void ServerInstance::_delete(const std::string &path, JsonDynamicCallbackHandler &&handler)
+void sv::server::_delete(const std::string &path, rt::json_dynamic_callback_handler &&handler)
 {
     m_Router.register_json_dynamic(
-        path, HttpMethods::JSON_DELETE,
-        std::forward<JsonDynamicCallbackHandler>(handler)
+        path, http::http_method::Json_Delete,
+        std::forward<rt::json_dynamic_callback_handler>(handler)
     );
 
 #ifdef LOGGING_ENABLED_STDOUT
@@ -329,7 +329,7 @@ void ServerInstance::_delete(const std::string &path, JsonDynamicCallbackHandler
 #endif
 }
 
-void ServerInstance::run_sync()
+void sv::server::run_sync()
 {
     while (true)
     {
@@ -363,7 +363,7 @@ void ServerInstance::run_sync()
     }
 }
 
-boost::asio::awaitable<void> ServerInstance::run_async()
+boost::asio::awaitable<void> sv::server::run_async()
 {
     auto executor = co_await boost::asio::this_coro::executor;
     while (true)
@@ -398,10 +398,10 @@ boost::asio::awaitable<void> ServerInstance::run_async()
 }
 
 // Sync
-void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
+void sv::server::process_connection(std::shared_ptr<tcp::socket> socket)
 {
-    Response<std::string> response;
-    Response<json> j_response;
+    http::response_builder<std::string> response;
+    http::response_builder<json> j_response;
     try
     {
         boost::asio::streambuf buffer;
@@ -435,7 +435,7 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
             std::string header_part = data.substr(0, pos + 4);
             std::string body_part = data.substr(pos + 4);
 
-            auto request = deserialize_request(header_part);
+            auto request = http::deserialize_request(header_part);
 
             // If headers contain Content-Type: application/json, then set 
             // appropriate json method into request
@@ -445,17 +445,17 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
             {
                 switch (request.m_Method)
                 {
-                    case HttpMethods::GET:
-                        request.m_Method = HttpMethods::JSON_GET;
+                    case http::http_method::Get:
+                        request.m_Method = http::http_method::Json_Get;
                         break;
-                    case HttpMethods::POST:
-                        request.m_Method = HttpMethods::JSON_POST;
+                    case http::http_method::Post:
+                        request.m_Method = http::http_method::Json_Post;
                         break;
-                    case HttpMethods::PUT:
-                        request.m_Method = HttpMethods::JSON_PUT;
+                    case http::http_method::Put:
+                        request.m_Method = http::http_method::Json_Put;
                         break;
-                    case HttpMethods::DELETE:
-                        request.m_Method = HttpMethods::JSON_DELETE;
+                    case http::http_method::Delete:
+                        request.m_Method = http::http_method::Json_Delete;
                         break;
                     default:
                         break;
@@ -482,27 +482,27 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
 
             boost::smatch _match;
             auto handler_pair = m_Router.get_handler(request.m_Path, request.m_Method, _match);
-            CallbackHandler static_handler;
-            DynamicCallbackHandler dynamic_handler;
-            JsonCallbackHandler json_handler;
-            JsonDynamicCallbackHandler json_dynamic;
+            rt::callback_handler static_handler;
+            rt::dynamic_callback_handler dynamic_handler;
+            rt::json_callback_handler json_handler;
+            rt::json_dynamic_callback_handler json_dynamic;
 
             if (handler_pair.first == 0)
             {
-                static_handler = std::get<CallbackHandler>(handler_pair.second);
+                static_handler = std::get<rt::callback_handler>(handler_pair.second);
                 static_handler(request, response);
             }
             else if (handler_pair.first == 1)
             {
-                dynamic_handler = std::get<DynamicCallbackHandler>(handler_pair.second);
+                dynamic_handler = std::get<rt::dynamic_callback_handler>(handler_pair.second);
                 dynamic_handler(request, response, _match);
             }
             else if (handler_pair.first == 2)
             {
-                json_handler = std::get<JsonCallbackHandler>(handler_pair.second);
+                json_handler = std::get<rt::json_callback_handler>(handler_pair.second);
 
                 auto j_body = json::parse(request.m_Body);
-                Request<json> j_request{
+                http::request<json> j_request{
                     request.m_Method,
                     request.m_Path,
                     request.m_HttpVersion,
@@ -515,10 +515,10 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
             }
             else if (handler_pair.first == 3)
             {
-                json_dynamic = std::get<JsonDynamicCallbackHandler>(handler_pair.second);
+                json_dynamic = std::get<rt::json_dynamic_callback_handler>(handler_pair.second);
 
                 auto j_body = json::parse(request.m_Body);
-                Request<json> j_request{
+                http::request<json> j_request{
                     request.m_Method,
                     request.m_Path,
                     request.m_HttpVersion,
@@ -589,10 +589,10 @@ void ServerInstance::process_connection(std::shared_ptr<tcp::socket> socket)
 }
 
 // Async
-boost::asio::awaitable<void> ServerInstance::process_connection_async(std::shared_ptr<tcp::socket> socket)
+boost::asio::awaitable<void> sv::server::process_connection_async(std::shared_ptr<tcp::socket> socket)
 {
-    Response<std::string> response;
-    Response<json> j_response;
+    http::response_builder<std::string> response;
+    http::response_builder<json> j_response;
     try
     {
         boost::asio::streambuf buffer;
@@ -620,7 +620,7 @@ boost::asio::awaitable<void> ServerInstance::process_connection_async(std::share
             std::string header_part = data.substr(0, pos + 4);
             std::string body_part = data.substr(pos + 4);
 
-            auto request = deserialize_request(header_part);
+            auto request = http::deserialize_request(header_part);
 
             // If headers contain Content-Type: application/json, then set 
             // appropriate json method into request
@@ -630,17 +630,17 @@ boost::asio::awaitable<void> ServerInstance::process_connection_async(std::share
             {
                 switch (request.m_Method)
                 {
-                    case HttpMethods::GET:
-                        request.m_Method = HttpMethods::JSON_GET;
+                    case http::http_method::Get:
+                        request.m_Method = http::http_method::Json_Get;
                         break;
-                    case HttpMethods::POST:
-                        request.m_Method = HttpMethods::JSON_POST;
+                    case http::http_method::Post:
+                        request.m_Method = http::http_method::Json_Post;
                         break;
-                    case HttpMethods::PUT:
-                        request.m_Method = HttpMethods::JSON_PUT;
+                    case http::http_method::Put:
+                        request.m_Method = http::http_method::Json_Put;
                         break;
-                    case HttpMethods::DELETE:
-                        request.m_Method = HttpMethods::JSON_DELETE;
+                    case http::http_method::Delete:
+                        request.m_Method = http::http_method::Json_Delete;
                         break;
                     default:
                         break;
@@ -667,27 +667,27 @@ boost::asio::awaitable<void> ServerInstance::process_connection_async(std::share
 
             boost::smatch _match;
             auto handler_pair = m_Router.get_handler(request.m_Path, request.m_Method, _match);
-            CallbackHandler static_handler;
-            DynamicCallbackHandler dynamic_handler;
-            JsonCallbackHandler json_handler;
-            JsonDynamicCallbackHandler json_dynamic;
+            rt::callback_handler static_handler;
+            rt::dynamic_callback_handler dynamic_handler;
+            rt::json_callback_handler json_handler;
+            rt::json_dynamic_callback_handler json_dynamic;
 
             if (handler_pair.first == 0)
             {
-                static_handler = std::get<CallbackHandler>(handler_pair.second);
+                static_handler = std::get<rt::callback_handler>(handler_pair.second);
                 static_handler(request, response);
             }
             else if (handler_pair.first == 1)
             {
-                dynamic_handler = std::get<DynamicCallbackHandler>(handler_pair.second);
+                dynamic_handler = std::get<rt::dynamic_callback_handler>(handler_pair.second);
                 dynamic_handler(request, response, _match);
             }
             else if (handler_pair.first == 2)
             {
-                json_handler = std::get<JsonCallbackHandler>(handler_pair.second);
+                json_handler = std::get<rt::json_callback_handler>(handler_pair.second);
 
                 auto j_body = json::parse(request.m_Body);
-                Request<json> j_request{
+                http::request<json> j_request{
                     request.m_Method,
                     request.m_Path,
                     request.m_HttpVersion,
@@ -700,10 +700,10 @@ boost::asio::awaitable<void> ServerInstance::process_connection_async(std::share
             }
             else if (handler_pair.first == 3)
             {
-                json_dynamic = std::get<JsonDynamicCallbackHandler>(handler_pair.second);
+                json_dynamic = std::get<rt::json_dynamic_callback_handler>(handler_pair.second);
 
                 auto j_body = json::parse(request.m_Body);
-                Request<json> j_request{
+                http::request<json> j_request{
                     request.m_Method,
                     request.m_Path,
                     request.m_HttpVersion,
@@ -773,7 +773,7 @@ boost::asio::awaitable<void> ServerInstance::process_connection_async(std::share
     }
 }
 
-void ServerInstance::start()
+void sv::server::start()
 {
 #ifdef WEBEAST_SERVER_SYNC
     run_sync();  
@@ -787,7 +787,7 @@ void ServerInstance::start()
 #endif
 }
 
-ServerInstance::~ServerInstance()
+sv::server::~server()
 {
 #ifdef LOGGING_ENABLED_STDOUT
     logger::info("Terminating Server");
