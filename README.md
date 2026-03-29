@@ -22,10 +22,12 @@
 - Added dynamic JSON support (nlohmann::json)
 - Added partial async handling of connection, using coroutines with Boost.Asio. They are not supported fully yet. Available to compile by defining corresponding macros: WEBEAST_SERVER_ASYNC. 
 - The default, synchronous thread pool version was moved under definition of WEBEAST_SERVER_SYNC, which is defined by default.
+- Fixed asynchronous version of the server, now supports every kind of route. 
+- Fixed user addition to database, now user addition works correctly.
 
 ### TODO
 - Cleanup the code
-- Fix JSON endpoint resolving under asynchronous server architecture
+- Modify the architecture of ORM
 
 To download, build and run application under *nix:
 ```

@@ -36,13 +36,16 @@ int32_t main()
     server.get("/form", STATIC(static_dir, "form.html"));
     server.post("/user", [&static_dir, &db](const Request<std::string> &request, Response<std::string> &response) {
         auto parsed = parse_body_params(request.m_Body);
-        int32_t c = 0; 
-        std::vector<std::string> values;
+        User user;
         for (const auto &[k, v]: parsed)
-            values.push_back(v);
-        
-        orm::insert(db, User{std::stoi(values[c]), values[++c]});
-        c++;
+        {
+            if (k == "name")
+                user.name = v;
+            
+            if (k == "id")
+                user.id = std::stoi(v);
+        }
+        orm::insert(db, user);
 
         logger::info("User was successfully added to database");
 

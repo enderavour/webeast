@@ -603,7 +603,7 @@ boost::asio::awaitable<void> ServerInstance::process_connection_async(std::share
 
             std::string data(
                 boost::asio::buffers_begin(buffer.data()),
-                boost::asio::buffers_begin(buffer.data()) + n
+                boost::asio::buffers_end(buffer.data())
             );
 
             auto pos = data.find("\r\n\r\n");
@@ -663,7 +663,7 @@ boost::asio::awaitable<void> ServerInstance::process_connection_async(std::share
 
             request.m_Body = std::move(body);
 
-            buffer.consume((pos + 4) + body.size());
+            buffer.consume(buffer.size());
 
             boost::smatch _match;
             auto handler_pair = m_Router.get_handler(request.m_Path, request.m_Method, _match);
