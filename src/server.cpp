@@ -775,19 +775,15 @@ boost::asio::awaitable<void> sv::server::process_connection_async(std::shared_pt
 
 void sv::server::start()
 {
-#ifdef WEBEAST_SERVER_SYNC
-    #ifdef LOGGING_ENABLED_STDOUT
+#ifdef LOGGING_ENABLED_STDOUT
         logger::info("Server is running at 127.0.0.1:8080");
-    #elifdef LOGGING_ENABLED_FILE
+#elifdef LOGGING_ENABLED_FILE
         logger::info(defaults::LOG_FILE_HANDLE, "Server is running at 127.0.0.1:8080"); 
-    #endif
+#endif
+
+#ifdef WEBEAST_SERVER_SYNC
     run_sync();  
 #elifdef WEBEAST_SERVER_ASYNC
-    #ifdef LOGGING_ENABLED_STDOUT
-        logger::info("Server is running at 127.0.0.1:8080");
-    #elifdef LOGGING_ENABLED_FILE
-        logger::info(defaults::LOG_FILE_HANDLE, "Server is running at 127.0.0.1:8080"); 
-    #endif
     auto executor = m_AsioCTX.get_executor();
     boost::asio::co_spawn(executor,
         [this]() -> boost::asio::awaitable<void> { co_await run_async(); },
