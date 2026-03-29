@@ -121,7 +121,5 @@ int32_t main()
         }
     );
 
-    logger::info("Server is running at 127.0.0.1:8080");
-
     server.start();
 }
