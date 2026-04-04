@@ -1,0 +1,9 @@
+# All of the paths should be relative and route from executable location, not from this directory
+
+[config]
+clients_capacity = 20
+static_dir_path = "../static"
+db_path = "../db/user.sqlite3"
+log_file = "../log/webeast.log"
+log_type = "file"
+server_type = "async"

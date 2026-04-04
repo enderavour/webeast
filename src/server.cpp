@@ -3,6 +3,7 @@
 #include <boost/system/error_code.hpp>
 #include "include/defs.hpp"
 #include "include/logger.hpp"
+#include "include/config.hpp"
 #include <print>
 #include <format>
 #include <nlohmann/json.hpp>
@@ -10,38 +11,26 @@
 using boost::asio::ip::make_address;
 using json = nlohmann::json;
 
+static conf::config_opts CONFIG_OPTS = defaults::CONFIG.get_config_opts();
+
 sv::server::server(const std::string &addr, int32_t port): 
 m_Addr(addr), m_Port(port), m_AsioCTX(1), m_Acceptor(m_AsioCTX, tcp::endpoint(
-    make_address(addr), port)), m_Pool(defaults::CLIENTS_MAX_CAPACITY) 
+    make_address(addr), port)), m_Pool(CONFIG_OPTS.clients_capacity) 
 {
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format(
+    LOG_INFO(CONFIG_OPTS, std::format(
         "Created server with at address {} and port {}. Max connections: {}",
-        addr, port, defaults::CLIENTS_MAX_CAPACITY
+        addr, port, CONFIG_OPTS.clients_capacity
     ));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Created server with at address {} and port {}. Max connections: {}",
-        addr, port, defaults::CLIENTS_MAX_CAPACITY
-    ));
-#endif
 }
 
 sv::server::server(const std::string &addr, int32_t port, rt::router router):
 m_Router(router), m_Addr(addr), m_Port(port), m_Acceptor(m_AsioCTX, tcp::endpoint(
-    make_address(addr), port)), m_Pool(defaults::CLIENTS_MAX_CAPACITY) 
+    make_address(addr), port)), m_Pool(CONFIG_OPTS.clients_capacity) 
 {
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format(
+    LOG_INFO(CONFIG_OPTS, std::format(
         "Created server with at address {} and port {}. Max connections: {}",
-        addr, port, defaults::CLIENTS_MAX_CAPACITY
+        addr, port, CONFIG_OPTS.clients_capacity
     ));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Created server with at address {} and port {}. Max connections: {}",
-        addr, port, defaults::CLIENTS_MAX_CAPACITY
-    ));
-#endif
 }
 
 void sv::server::include_router(rt::router router)
@@ -56,15 +45,10 @@ void sv::server::get(const std::string &path, rt::callback_handler &&handler)
         path, http::http_method::Get, 
         std::forward<rt::callback_handler>(handler)
     );
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format(
+
+    LOG_INFO(CONFIG_OPTS, std::format(
         "Registering GET request at path: {}", path
     ));
-#elifdef LOGGING_ENABLE_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Registering GET request at path: {}", path
-    ));
-#endif
 }
 
 void sv::server::post(const std::string &path, rt::callback_handler &&handler)
@@ -73,15 +57,9 @@ void sv::server::post(const std::string &path, rt::callback_handler &&handler)
         path, http::http_method::Post, 
         std::forward<rt::callback_handler>(handler)
     );
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format(
+    LOG_INFO(CONFIG_OPTS, std::format(
         "Registering POST request at path: {}", path
     ));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Registering POST request at path: {}", path
-    ));
-#endif
 }
 
 void sv::server::put(const std::string &path, rt::callback_handler &&handler)
@@ -90,15 +68,10 @@ void sv::server::put(const std::string &path, rt::callback_handler &&handler)
         path, http::http_method::Put, 
         std::forward<rt::callback_handler>(handler)
     );
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format(
+
+    LOG_INFO(CONFIG_OPTS, std::format(
         "Registering PUT request at path: {}", path
     ));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Registering PUT request at path: {}", path
-    ));
-#endif
 }
 
 void sv::server::_delete(const std::string &path, rt::callback_handler &&handler)
@@ -107,15 +80,10 @@ void sv::server::_delete(const std::string &path, rt::callback_handler &&handler
         path, http::http_method::Delete,
         std::forward<rt::callback_handler>(handler)
     );
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format(
+
+    LOG_INFO(CONFIG_OPTS, std::format(
         "Registering DELETE request at path: {}", path
     ));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Registering DELETE request at path: {}", path
-    ));
-#endif
 }
 
 // Dynamic
@@ -125,15 +93,10 @@ void sv::server::get(const std::string &path, rt::dynamic_callback_handler &&han
         path, http::http_method::Get, 
         std::forward<rt::dynamic_callback_handler>(handler)
     );
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format(
+    
+    LOG_INFO(CONFIG_OPTS, std::format(
         "Registering dynamic GET request at path: {}", path
     ));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Registering dynamic GET request at path: {}", path
-    ));
-#endif
 }
 
 void sv::server::post(const std::string &path, rt::dynamic_callback_handler &&handler)
@@ -142,15 +105,10 @@ void sv::server::post(const std::string &path, rt::dynamic_callback_handler &&ha
         path, http::http_method::Post, 
         std::forward<rt::dynamic_callback_handler>(handler)
     );
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format(
+    
+    LOG_INFO(CONFIG_OPTS, std::format(
         "Registering dynamic POST request at path: {}", path
     ));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Registering dynamic POST request at path: {}", path
-    ));
-#endif
 }
 
 void sv::server::put(const std::string &path, rt::dynamic_callback_handler &&handler)
@@ -159,15 +117,10 @@ void sv::server::put(const std::string &path, rt::dynamic_callback_handler &&han
         path, http::http_method::Put, 
         std::forward<rt::dynamic_callback_handler>(handler)
     );
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format(
+
+    LOG_INFO(CONFIG_OPTS, std::format(
         "Registering dynamic PUT request at path: {}", path
     ));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Registering dynamic PUT request at path: {}", path
-    ));
-#endif
 }
 
 void sv::server::_delete(const std::string &path, rt::dynamic_callback_handler &&handler)
@@ -176,15 +129,10 @@ void sv::server::_delete(const std::string &path, rt::dynamic_callback_handler &
         path, http::http_method::Delete,
         std::forward<rt::dynamic_callback_handler>(handler)
     );
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format(
+
+    LOG_INFO(CONFIG_OPTS, std::format(
         "Registering dynamic DELETE request at path: {}", path
     ));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Registering dynamic DELETE request at path: {}", path
-    ));
-#endif
 }
 
 // Json
@@ -194,15 +142,10 @@ void sv::server::get(const std::string &path, rt::json_callback_handler &&handle
         path, http::http_method::Json_Get,
         std::forward<rt::json_callback_handler>(handler)
     );
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format(
+
+    LOG_INFO(CONFIG_OPTS, std::format(
         "Registering JSON GET request at path: {}", path
     ));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Registering JSON GET request at path: {}", path
-    ));
-#endif
 }
 
 void sv::server::post(const std::string &path, rt::json_callback_handler &&handler)
@@ -211,15 +154,10 @@ void sv::server::post(const std::string &path, rt::json_callback_handler &&handl
         path, http::http_method::Json_Post, 
         std::forward<rt::json_callback_handler>(handler)
     );
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format(
+
+    LOG_INFO(CONFIG_OPTS, std::format(
         "Registering JSON POST request at path: {}", path
     ));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Registering JSON POST request at path: {}", path
-    ));
-#endif
 }
 
 void sv::server::put(const std::string &path, rt::json_callback_handler &&handler)
@@ -228,15 +166,10 @@ void sv::server::put(const std::string &path, rt::json_callback_handler &&handle
         path, http::http_method::Json_Put, 
         std::forward<rt::json_callback_handler>(handler)
     );
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format(
+    
+    LOG_INFO(CONFIG_OPTS, std::format(
         "Registering JSON PUT request at path: {}", path
     ));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Registering JSON PUT request at path: {}", path
-    ));
-#endif
 }
 
 void sv::server::_delete(const std::string &path, rt::json_callback_handler &&handler)
@@ -245,15 +178,10 @@ void sv::server::_delete(const std::string &path, rt::json_callback_handler &&ha
         path, http::http_method::Json_Delete, 
         std::forward<rt::json_callback_handler>(handler)
     );
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format(
+
+    LOG_INFO(CONFIG_OPTS, std::format(
         "Registering JSON DELETE request at path: {}", path
     ));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Registering JSON DELETE request at path: {}", path
-    ));
-#endif
 }
 
 // Json Dynamic
@@ -264,15 +192,9 @@ void sv::server::get(const std::string &path, rt::json_dynamic_callback_handler 
         std::forward<rt::json_dynamic_callback_handler>(handler)
     );
 
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format(
+    LOG_INFO(CONFIG_OPTS, std::format(
         "Registering JSON Dynamic GET request at path: {}", path
     ));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Registering JSON Dynamic GET request at path: {}", path
-    ));
-#endif
 }
 
 void sv::server::post(const std::string &path, rt::json_dynamic_callback_handler &&handler)
@@ -282,15 +204,9 @@ void sv::server::post(const std::string &path, rt::json_dynamic_callback_handler
         std::forward<rt::json_dynamic_callback_handler>(handler)
     );
 
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format(
+    LOG_INFO(CONFIG_OPTS, std::format(
         "Registering JSON Dynamic POST request at path: {}", path
     ));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Registering JSON Dynamic POST request at path: {}", path
-    ));
-#endif
 }
 
 void sv::server::put(const std::string &path, rt::json_dynamic_callback_handler &&handler)
@@ -300,15 +216,9 @@ void sv::server::put(const std::string &path, rt::json_dynamic_callback_handler 
         std::forward<rt::json_dynamic_callback_handler>(handler)
     );
 
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format(
+    LOG_INFO(CONFIG_OPTS, std::format(
         "Registering JSON Dynamic PUT request at path: {}", path
     ));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Registering JSON Dynamic PUT request at path: {}", path
-    ));
-#endif
 }
 
 void sv::server::_delete(const std::string &path, rt::json_dynamic_callback_handler &&handler)
@@ -318,15 +228,9 @@ void sv::server::_delete(const std::string &path, rt::json_dynamic_callback_hand
         std::forward<rt::json_dynamic_callback_handler>(handler)
     );
 
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format(
+    LOG_INFO(CONFIG_OPTS, std::format(
         "Registering JSON Dynamic DELETE request at path: {}", path
     ));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format(
-        "Registering JSON Dynamic DELETE request at path: {}", path
-    ));
-#endif
 }
 
 void sv::server::run_sync()
@@ -336,30 +240,18 @@ void sv::server::run_sync()
         auto socket = std::make_shared<tcp::socket>(m_AsioCTX);
         m_Acceptor.accept(*socket);
 
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info("Accepted new client");
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, "Accepted new client");
-#endif
+        LOG_INFO(CONFIG_OPTS, "Accepted new client");
 
         if (m_Pool.active_tasks_count() + 1 >= defaults::CLIENTS_MAX_CAPACITY)
         {
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::error("Thread pool capacity exceded. Closing connection.");
-#elifdef LOGGING_ENABLED_FILE
-    logger::error(defaults::LOG_FILE_HANDLE, "Thread pool capacity exceded. Closing connection.");
-#endif
+            LOG_ERROR(CONFIG_OPTS, "Thread pool capacity exceded. Closing connection.");
             socket->close();
         }
 
         m_Pool.add_task([this, socket = std::move(socket)]() {
             process_connection(std::move(socket));
         });
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info("Adding processing task to thread pool");
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, "Adding processing task to thread pool");
-#endif
+        LOG_INFO(CONFIG_OPTS, "Adding processing task to thread pool");
     }
 }
 
@@ -371,28 +263,16 @@ boost::asio::awaitable<void> sv::server::run_async()
         try 
         {
             auto socket = std::make_shared<tcp::socket>(co_await m_Acceptor.async_accept(executor));
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info("Accepted new client");
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, "Accepted new client");
-#endif
+            LOG_INFO(CONFIG_OPTS, "Accepted new client");
             boost::asio::co_spawn(executor, [this, sock = std::move(socket)]() mutable -> boost::asio::awaitable<void> 
             {
                 co_await process_connection_async(sock);
             }, boost::asio::detached);
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info("Started coroutine of processing task");
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, "Started coroutine of processing task");
-#endif
+            LOG_INFO(CONFIG_OPTS, "Started coroutine of processing task");
         }
         catch (const std::exception &e)
         {
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info("Async accept error: {}", e.what());
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format("Async accept error: {}", e.what()));
-#endif           
+            LOG_INFO(CONFIG_OPTS, std::format("Async accept error: {}", e.what()));         
         }
     }
 }
@@ -424,11 +304,7 @@ void sv::server::process_connection(std::shared_ptr<tcp::socket> socket)
             auto pos = data.find("\r\n\r\n");
             if (pos == std::string::npos)
             {
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::error("Could not parse invalid HTTP request.");
-#elifdef LOGGING_ENABLED_FILE
-    logger::error(defaults::LOG_FILE_HANDLE, "Could not parse nvallid HTTP request.");
-#endif
+                LOG_ERROR(CONFIG_OPTS, "Could not parse invalid HTTP request.");
                 throw std::runtime_error("Invalid HTTP request");
             }
 
@@ -544,35 +420,19 @@ void sv::server::process_connection(std::shared_ptr<tcp::socket> socket)
             if (ec)
             {
                 if (ec == boost::asio::error::connection_reset)
-                {
-                    #ifdef LOGGING_ENABLED_STDOUT
-                        logger::info("Client resetted the connection");
-                    #elifdef LOGGING_ENABLED_FILE
-                        logger::info(defaults::LOG_FILE_HANDLE, "Client resetted the connection");
-                    #endif
-                }
+                    LOG_INFO(CONFIG_OPTS, "Client resetted the connection");
                 else
                 {
-                    #ifdef LOGGING_ENABLED_STDOUT
-                        logger::error(std::format(                            
-                            "Connection error occured: {}", ec.what()
-                        ));
-                    #elifdef LOGGING_ENABLED_FILE
-                        logger::error(defaults::LOG_FILE_HANDLE, std::format(                            
-                            "Connection error occured: {}", ec.what()
-                        ));
-                    #endif
+                    LOG_ERROR(CONFIG_OPTS, std::format(                            
+                        "Connection error occured: {}", ec.what()
+                    ));
                 }
             }
 
             auto it_conn = request.m_Headers.find("Connection");
             if (it_conn != request.m_Headers.end() && it_conn->second == "close")
             {
-                #ifdef LOGGING_ENABLED_STDOUT
-                    logger::info("Client closed the connection");
-                #elifdef LOGGING_ENABLED_FILE
-                    logger::info(defaults::LOG_FILE_HANDLE, "Client closed the connection");
-                #endif
+                LOG_INFO(CONFIG_OPTS, "Client closed the connection");
                 break;
             }
         }
@@ -580,11 +440,7 @@ void sv::server::process_connection(std::shared_ptr<tcp::socket> socket)
     }
     catch (const std::exception &e)
     {
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::error(std::format("Error occured: {}", e.what()));
-#elifdef LOGGING_ENABLED_FILE
-    logger::error(defaults::LOG_FILE_HANDLE, std::format("Error occured: {}", e.what()));
-#endif
+        LOG_INFO(CONFIG_OPTS, std::format("Error occured: {}", e.what()));
     }
 }
 
@@ -609,11 +465,7 @@ boost::asio::awaitable<void> sv::server::process_connection_async(std::shared_pt
             auto pos = data.find("\r\n\r\n");
             if (pos == std::string::npos)
             {
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::error("Could not parse invalid HTTP request.");
-#elifdef LOGGING_ENABLED_FILE
-    logger::error(defaults::LOG_FILE_HANDLE, "Could not parse nvallid HTTP request.");
-#endif
+                LOG_ERROR(CONFIG_OPTS, "Could not parse invalid HTTP request.");
                 throw std::runtime_error("Invalid HTTP request");
             }
 
@@ -730,34 +582,20 @@ boost::asio::awaitable<void> sv::server::process_connection_async(std::shared_pt
             {
                 if (ec == boost::asio::error::connection_reset)
                 {
-                    #ifdef LOGGING_ENABLED_STDOUT
-                        logger::info("Client resetted the connection");
-                    #elifdef LOGGING_ENABLED_FILE
-                        logger::info(defaults::LOG_FILE_HANDLE, "Client resetted the connection");
-                    #endif
+                    LOG_INFO(CONFIG_OPTS, "Client resetted the connection");
                 }
                 else
                 {
-                    #ifdef LOGGING_ENABLED_STDOUT
-                        logger::error(std::format(                            
-                            "Connection error occured: {}", ec.what()
-                        ));
-                    #elifdef LOGGING_ENABLED_FILE
-                        logger::error(defaults::LOG_FILE_HANDLE, std::format(                            
-                            "Connection error occured: {}", ec.what()
-                        ));
-                    #endif
+                    LOG_ERROR(CONFIG_OPTS, std::format(                            
+                        "Connection error occured: {}", ec.what()
+                    ));
                 }
             }
 
             auto it_conn = request.m_Headers.find("Connection");
             if (it_conn != request.m_Headers.end() && it_conn->second == "close")
             {
-                #ifdef LOGGING_ENABLED_STDOUT
-                    logger::info("Client closed the connection");
-                #elifdef LOGGING_ENABLED_FILE
-                    logger::info(defaults::LOG_FILE_HANDLE, "Client closed the connection");
-                #endif
+                LOG_INFO(CONFIG_OPTS, "Client closed the connection");
                 break;
             }
         }
@@ -765,39 +603,30 @@ boost::asio::awaitable<void> sv::server::process_connection_async(std::shared_pt
     }
     catch (const std::exception &e)
     {
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::error(std::format("Error occured: {}", e.what()));
-#elifdef LOGGING_ENABLED_FILE
-    logger::error(defaults::LOG_FILE_HANDLE, std::format("Error occured: {}", e.what()));
-#endif
+        LOG_ERROR(CONFIG_OPTS, std::format("Error occured: {}", e.what()));
     }
 }
 
 void sv::server::start()
 {
-#ifdef LOGGING_ENABLED_STDOUT
-        logger::info("Server is running at 127.0.0.1:8080");
-#elifdef LOGGING_ENABLED_FILE
-        logger::info(defaults::LOG_FILE_HANDLE, "Server is running at 127.0.0.1:8080"); 
-#endif
+    LOG_INFO(CONFIG_OPTS, "Server is running at 127.0.0.1:8080");
 
-#ifdef WEBEAST_SERVER_SYNC
-    run_sync();  
-#elifdef WEBEAST_SERVER_ASYNC
-    auto executor = m_AsioCTX.get_executor();
-    boost::asio::co_spawn(executor,
-        [this]() -> boost::asio::awaitable<void> { co_await run_async(); },
-        boost::asio::detached
-    );
-    m_AsioCTX.run(); 
-#endif
+    if (CONFIG_OPTS.server == conf::server_type::Sync)
+    {
+        run_sync();  
+    }
+    else if (CONFIG_OPTS.server == conf::server_type::Async)
+    {
+        auto executor = m_AsioCTX.get_executor();
+        boost::asio::co_spawn(executor,
+            [this]() -> boost::asio::awaitable<void> { co_await run_async(); },
+            boost::asio::detached
+        );
+        m_AsioCTX.run(); 
+    }
 }
 
 sv::server::~server()
 {
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info("Terminating Server");
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, "Terminating Server");
-#endif
+    LOG_INFO(CONFIG_OPTS, "Terminating Server");
 }

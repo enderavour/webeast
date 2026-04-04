@@ -11,13 +11,13 @@
 #include <new>
 #include <format>
 
+static conf::config_opts CONFIG_OPTS = defaults::CONFIG.get_config_opts();
+
+
 int32_t main()
 {
     sv::server server("127.0.0.1", 8080);
     sd::static_dir static_dir(defaults::STATIC_DIR_PATH);
-#ifdef LOGGING_ENABLED_FILE
-    logger::open_log_file(defaults::LOG_FILE_PATH);
-#endif
 
     orm::database db(defaults::DB_PATH);
     orm::create_table<User>(db);
@@ -27,7 +27,7 @@ int32_t main()
     server.get("/", static_file(static_dir, "index.html"));
     server.get("/pic", static_file(static_dir, "pic.html"));
     server.put("/", [&static_dir](const http::request<std::string> &request, http::response_builder<std::string> &response) {
-        logger::debug(std::format("Body response: {}", request.m_Body));
+        LOG_INFO(CONFIG_OPTS, ("Body response: {}", request.m_Body));
         
         response.set_status_code(http::http_status::Ok);
         response.set_body(request.m_Body);
@@ -47,7 +47,7 @@ int32_t main()
         }
         orm::insert(db, user);
 
-        logger::info("User was successfully added to database");
+        LOG_INFO(CONFIG_OPTS, "User was successfully added to database");
 
         response.set_status_code(http::http_status::Ok);
         response.set_body("User added to database");
@@ -66,9 +66,7 @@ int32_t main()
     server.post("/jsonp",
         [](const http::request<nlohmann::json> &request, http::response_builder<nlohmann::json> &response)
         {
-            logger::info(
-                std::format("Received JSON from server: {}", request.m_Body.dump())
-            );
+            LOG_INFO(CONFIG_OPTS, std::format("Received JSON from server: {}", request.m_Body.dump()));
             auto json_obj = nlohmann::json::object({
                 {"status", 200},
                 {"response", "Ok!"}
@@ -92,13 +90,11 @@ int32_t main()
                 {"response", json_matched}
             });           
 
-            logger::info(std::format("JSON Object: {}", json_obj.dump()));
+            LOG_INFO(CONFIG_OPTS, std::format("JSON Object: {}", json_obj.dump()));
 
             response.set_status_code(http::http_status::Ok);
             response.set_body(json_obj);
-            response.set_header("Content-Length", std::to_string(
-               json_obj.dump().size()
-            ));
+            response.set_header("Content-Length", std::to_string(json_obj.dump().size()));
             response.set_header("Content-Type", "application/json");
         }
     );

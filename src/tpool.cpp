@@ -1,8 +1,12 @@
 #include "include/server.hpp"
 #include "include/tpool.hpp"
 #include "include/defs.hpp"
+#include "include/logger.hpp"
+#include <format>
 
-tpool::thread_pool::thread_pool(int32_t worker_capacity = defaults::CLIENTS_MAX_CAPACITY)
+static conf::config_opts CONFIG_OPTS = defaults::CONFIG.get_config_opts();
+
+tpool::thread_pool::thread_pool(int32_t worker_capacity)
 {
     m_Workers.emplace_back([this] {
         while (true)
@@ -24,6 +28,8 @@ tpool::thread_pool::thread_pool(int32_t worker_capacity = defaults::CLIENTS_MAX_
             task();
         }
     });
+
+    LOG_INFO(CONFIG_OPTS, std::format("Initialized Thread Pool with {} client capacity", worker_capacity));
 }
 
 tpool::thread_pool::~thread_pool()
@@ -37,6 +43,8 @@ tpool::thread_pool::~thread_pool()
 
     for (auto &thread: m_Workers)
         thread.join();
+
+    LOG_INFO(CONFIG_OPTS, "Thread Pool deinitialized");
 }
 
 void tpool::thread_pool::add_task(std::function<void()> task)

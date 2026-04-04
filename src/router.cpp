@@ -2,15 +2,14 @@
 #include "include/http.hpp"
 #include "include/defs.hpp"
 #include "include/logger.hpp"
+#include "include/config.hpp"
 #include <boost/algorithm/string/replace.hpp>
+
+static conf::config_opts CONFIG_OPTS = defaults::CONFIG.get_config_opts();
 
 rt::router::router()
 {
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info("Created Router, filled with default 404/405 callbacks");
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, "Created Router, filled with default 404/405 callbacks");
-#endif
+    LOG_INFO(CONFIG_OPTS, "Created Router, filled with default 404/405 callbacks");
     m_notFoundHandler = defaults::default_404_handler;
     m_notAllowedHandler = defaults::default_405_handler;
 }
@@ -18,11 +17,7 @@ rt::router::router()
 void rt::router::register_handler(const std::string &path, http::http_method method, rt::callback_handler &&callback)
 {
     m_Callbacks[path][method] = std::move(callback);
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format("Added callback handler at path {}", path));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format("Added callback handler at path {}", path));
-#endif
+    LOG_INFO(CONFIG_OPTS, std::format("Added callback handler at path {}", path));
 }
 
 void rt::router::remove_handler(const std::string &path, http::http_method method)
@@ -30,31 +25,17 @@ void rt::router::remove_handler(const std::string &path, http::http_method metho
     auto entry = m_Callbacks.find(path);
     if (entry == m_Callbacks.end())
     {
-#ifdef LOGGING_ENABLED_STDOUT
-        logger::error(
-            std::format("Could not find any callback handler at path {}", path)
-        );
-#elifdef LOGGING_ENABLED_FILE
-        logger::error(
-            defaults::LOG_FILE_HANDLE,
-            std::format("Could not find any callback handler at path {}", path)
-        );
-#endif
+        LOG_ERROR(CONFIG_OPTS, std::format("Could not find any callback handler at path {}", path));
         return;
     }
-
     auto &method_map = entry->second;
     method_map.erase(method);
 
     if (method_map.empty())
         m_Callbacks.erase(entry);
 
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format("Removed handler at path {}", path));
-#elifdef LOGGING_ENABLED_FILE 
-    logger::info(defaults::LOG_FILE_HANDLE, std::format("Removed handler at path {}", path));
-#endif
-}
+    LOG_INFO(CONFIG_OPTS, std::format("Removed handler at path {}", path));
+ }
 
 void rt::router::register_dynamic(const std::string &path, http::http_method method, rt::dynamic_callback_handler &&callback)
 {
@@ -63,25 +44,14 @@ void rt::router::register_dynamic(const std::string &path, http::http_method met
     boost::replace_all(regex_path, "}", ")");
     regex_path = "^" + regex_path + "$";
     m_DynamicRoutes.emplace_back(boost::regex(regex_path), method, callback);
-
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format("Registered dynamic method at {}", path));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format("Registered dynamic method at {}", path));
-#endif
+    LOG_INFO(CONFIG_OPTS, std::format("Registered dynamic method at {}", path));
 }
 
 void rt::router::register_json(const std::string &path, http::http_method method, rt::json_callback_handler &&handler)
 {
     m_JsonRoutes.emplace_back(path, method, handler);
 
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format("Registered method with JSON handler at {}", path));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, 
-        std::format("Registered method with JSON handler at {}", path));
-#endif
-
+    LOG_INFO(CONFIG_OPTS, std::format("Registered method with JSON handler at {}", path));
 }
 
 void rt::router::register_json_dynamic(const std::string &path, http::http_method method, rt::json_dynamic_callback_handler &&handler)
@@ -109,11 +79,7 @@ bool rt::router::dispatch(const http::request<std::string> &req, http::response_
     auto path_it = m_Callbacks.find(req.m_Path);
     if (path_it == m_Callbacks.end())
     {
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::warn(std::format("Dispatch: The provided path is not found: {}", req.m_Path));
-#elifdef LOGGING_ENABLED_FILE
-    logger::warn(defaults::LOG_FILE_HANDLE, std::format("Dispatch: The provided path is not found: {}", req.m_Path));
-#endif
+        LOG_WARN(CONFIG_OPTS, std::format("Dispatch: The provided path is not found: {}", req.m_Path));
         m_notFoundHandler(req, res);
         res.set_status_code(http::http_status::NotFound);
         return false;
@@ -123,11 +89,7 @@ bool rt::router::dispatch(const http::request<std::string> &req, http::response_
     auto method_it = method_map.find(req.m_Method);
     if (method_it == method_map.end())
     {
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::warn(std::format("Dispatch: The provided path is not allowed at path: {}", req.m_Path));
-#elifdef LOGGING_ENABLED_FILE
-    logger::warn(defaults::LOG_FILE_HANDLE, std::format("Dispatch: The provided path is not found: {}", req.m_Path));
-#endif
+        LOG_WARN(CONFIG_OPTS, std::format("Dispatch: The provided path is not allowed at path: {}", req.m_Path));
         m_notAllowedHandler(req, res);
         res.set_status_code(http::http_status::MethodNotAllowed);
         return false;
@@ -165,14 +127,8 @@ rt::router::get_handler(const std::string &path, http::http_method method, boost
             out_match = match;
         }
 
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::warn(std::format("Dispatch: The provided JSON path is not found: {}", path));
-#elifdef LOGGING_ENABLED_FILE
-    logger::warn(
-        defaults::LOG_FILE_HANDLE,
-        std::format("Dispatch: The provided JSON path is not found: {}", path)
-    );
-#endif
+    LOG_WARN(CONFIG_OPTS, std::format("Dispatch: The provided JSON path is not found: {}", path));
+
     return {0, m_notFoundHandler};
     }
 
@@ -185,16 +141,10 @@ rt::router::get_handler(const std::string &path, http::http_method method, boost
         if (method_it != method_map.end())
             return {0, method_it->second};
         
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::warn(std::format(
-        "Dispatch: The provided path is not allowed at path: {}", path
-    ));
-#elifdef LOGGING_ENABLED_FILE
-    logger::warn(
-        defaults::LOG_FILE_HANDLE,
-        std::format("Dispatch: The provided path is not allowed at path: {}", path)
-    );
-#endif
+        LOG_WARN(CONFIG_OPTS, std::format(
+            "Dispatch: The provided path is not allowed at path: {}", path
+        ));
+
         return {0, m_notAllowedHandler};
     }
         
@@ -211,22 +161,12 @@ rt::router::get_handler(const std::string &path, http::http_method method, boost
         }
         out_match = match;
     }
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::warn(std::format("Dispatch: The provided path is not found: {}", path));
-#elifdef LOGGING_ENABLED_FILE
-    logger::warn(
-        defaults::LOG_FILE_HANDLE,
-        std::format("Dispatch: The provided path is not found: {}", path)
-    );
-#endif
+    LOG_WARN(CONFIG_OPTS, std::format("Dispatch: The provided path is not found: {}", path));
+
     return {0, m_notFoundHandler};
 }
 
 rt::router::~router()
 {
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info("Terminating Router");
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, "Terminating Router");
-#endif
+    LOG_INFO(CONFIG_OPTS, "Terminating Router");
 }

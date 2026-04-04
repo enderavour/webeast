@@ -17,13 +17,18 @@
 - The ORM was moved fully to headers, in order to avoid multiple template instantiationss
 - Added static JSON support (nlohmann::json)
 - Added dynamic JSON support (nlohmann::json)
-- Added partial async handling of connection, using coroutines with Boost.Asio. Available to compile by defining corresponding macros: WEBEAST_SERVER_ASYNC (Defined by default).
-- The default, synchronous thread pool version was moved under definition of WEBEAST_SERVER_SYNC.
+- (Added partial async handling of connection, using coroutines with Boost.Asio. Available to compile by defining corresponding macros: WEBEAST_SERVER_ASYNC (Defined by default)).
+- (The default, synchronous thread pool version was moved under definition of WEBEAST_SERVER_SYNC).
 - Started rewriting the architecture and naming conventions of the app parts. Not compatible with previous namings and scopes
+- Added configuration via TOML format. View ./config/webeast.config
+- Changed logging architecture.
+- Removed compilation macros (WEBEAST_SERVER_SYNC, WEBEAST_SERVER_ASYNC, LOGGING_ENABLED_STDOUT, LOGGING_ENABLED_FILE) based architecture. Now everything adjusts dynamically via webeast.toml or pulls from default settings 
 
 ### TODO
 - Cleanup the code
 - Modify the architecture of ORM
+- Test config implementations
+- Implement middleware
 
 To download, build and run application under *nix:
 ```

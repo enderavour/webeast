@@ -79,7 +79,6 @@ template class http::response_builder<std::string&&>;
 template class http::response_builder<nlohmann::json>;
 template class http::response_builder<nlohmann::json&&>;
 
-
 // Helper function for converting string method to HtpMethods enumeration
 http::http_method convert_method(const std::string &method)
 {

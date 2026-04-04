@@ -7,25 +7,19 @@
 
 namespace fs = std::filesystem;
 
+static conf::config_opts CONFIG_OPTS = defaults::CONFIG.get_config_opts();
+
 sd::static_dir::static_dir() = default;
 
 sd::static_dir::static_dir(const fs::path &sdir_path):
 static_dir_path(sdir_path) 
 {
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format("Instantiated static directory with path: {}", sdir_path.string()));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format("Instantiated static directory with path: {}", sdir_path.string()));
-#endif
+    LOG_INFO(CONFIG_OPTS, std::format("Initialized static directory with path: {}", sdir_path.string()));
 }
 
 void sd::static_dir::set_static_dir_path(const fs::path &sdir_path)
 {
-#ifdef LOGGING_ENABLED_STDOUT
-    logger::info(std::format("Instantiated static directory with path: {}", sdir_path.string()));
-#elifdef LOGGING_ENABLED_FILE
-    logger::info(defaults::LOG_FILE_HANDLE, std::format("Instantiated static directory with path: {}", sdir_path.string()));
-#endif
+    LOG_INFO(CONFIG_OPTS, std::format("Instantiated static directory with path: {}", sdir_path.string()));
     static_dir_path = sdir_path;
 }
 

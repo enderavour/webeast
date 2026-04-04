@@ -75,4 +75,7 @@ void logger::open_log_file(const std::filesystem::path &fname)
 {
     std::filesystem::create_directories(fname.parent_path());
     LOG_FILE_HANDLE.open(fname, std::ios_base::out);
+
+    if (!LOG_FILE_HANDLE.is_open())
+        std::println("[ERROR] Error opening log file");
 }
