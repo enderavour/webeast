@@ -30,6 +30,13 @@
 - Test config implementations
 - Implement middleware
 
+### Prerequisites:
+- Boost.Asio
+- Boost.Regex
+- Boost.Url
+- SQLite3 
+- toml++
+
 To download, build and run application under *nix:
 ```
 git clone https://github.com/enderavour/webeast.git
@@ -44,9 +51,9 @@ To download, build and run application under Windows:
 ```
 git clone https://github.com/microsoft/vcpkg.git && cd vcpkg && .\vcpkg-bootstrap.bat
 ```
-2. Install Boost.Asio, Boost.Regex, Boost.URL and SQLite3:
+2. Install Boost.Asio, Boost.Regex, Boost.URL, SQLite3 and toml++:
 ```
-.\vcpkg install boost-asio boost-regex boost-url sqlite3
+.\vcpkg install boost-asio boost-regex boost-url sqlite3 tomlplusplus
 ```
 3. Run CMake Preset:
 ```
