@@ -48,7 +48,7 @@ int32_t main()
         db.insert(user);
 
         // TODO: Segfaults on macOS, probably because on non-multithreaded build of SQLite
-        #if !defined(__APPLE__)
+        #ifndef __APPLE__
         auto users = db.select_all<User>();
 
         for (const auto &u: users)
