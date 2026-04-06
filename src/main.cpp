@@ -1,3 +1,4 @@
+#include "include/config.hpp"
 #include "include/http.hpp"
 #include "include/router.hpp"
 #include "include/server.hpp"
@@ -13,14 +14,13 @@
 
 static conf::config_opts CONFIG_OPTS = defaults::CONFIG.get_config_opts();
 
-
 int32_t main()
 {
     sv::server server("127.0.0.1", 8080);
     sd::static_dir static_dir(defaults::STATIC_DIR_PATH);
 
     orm::database db(defaults::DB_PATH);
-    orm::create_table<User>(db);
+    db.create_table<User>();
 
     rt::router router;
     server.include_router(router);
@@ -28,7 +28,7 @@ int32_t main()
     server.get("/pic", static_file(static_dir, "pic.html"));
     server.put("/", [&static_dir](const http::request<std::string> &request, http::response_builder<std::string> &response) {
         LOG_INFO(CONFIG_OPTS, ("Body response: {}", request.m_Body));
-        
+
         response.set_status_code(http::http_status::Ok);
         response.set_body(request.m_Body);
         response.set_header("Content-Type", "text/plain");
@@ -41,11 +41,19 @@ int32_t main()
         {
             if (k == "name")
                 user.name = v;
-            
+
             if (k == "id")
                 user.id = std::stoi(v);
         }
-        orm::insert(db, user);
+        db.insert(user);
+
+        // TODO: Segfaults on macOS, probably because on non-multithreaded build of SQLite
+        #if !defined(__APPLE__)
+        auto users = db.select_all<User>();
+
+        for (const auto &u: users)
+            LOG_INFO(CONFIG_OPTS, std::format("ID: {}, Name: {}", u.id, u.name));
+        #endif
 
         LOG_INFO(CONFIG_OPTS, "User was successfully added to database");
 
@@ -53,7 +61,7 @@ int32_t main()
         response.set_body("User added to database");
         response.set_header("Content-Type", "text/html");
     });
-    server.get("/greet/{}", 
+    server.get("/greet/{}",
         [](const http::request<std::string> &request, http::response_builder<std::string> &response, boost::smatch &_match)
         {
             auto matched = dynamic_get_match(_match, 1);
@@ -70,7 +78,7 @@ int32_t main()
             auto json_obj = nlohmann::json::object({
                 {"status", 200},
                 {"response", "Ok!"}
-            });           
+            });
 
             response.set_status_code(http::http_status::Ok);
             response.set_body(json_obj);
@@ -80,7 +88,7 @@ int32_t main()
             response.set_header("Content-Type", "application/json");
         }
     );
-    server.post("/jsond/{}", 
+    server.post("/jsond/{}",
         [](const http::request<nlohmann::json> &request, http::response_builder<nlohmann::json> &response, boost::smatch &_match)
         {
             auto json_matched = dynamic_get_match(_match, 1);
@@ -88,7 +96,7 @@ int32_t main()
             auto json_obj = nlohmann::json::object({
                 {"status", 200},
                 {"response", json_matched}
-            });           
+            });
 
             LOG_INFO(CONFIG_OPTS, std::format("JSON Object: {}", json_obj.dump()));
 
@@ -98,7 +106,7 @@ int32_t main()
             response.set_header("Content-Type", "application/json");
         }
     );
-    server.get("/jsond/{}", 
+    server.get("/jsond/{}",
         [](const http::request<nlohmann::json> &request, http::response_builder<nlohmann::json> &response, boost::smatch &_match)
         {
             auto json_matched = dynamic_get_match(_match, 1);
@@ -106,7 +114,7 @@ int32_t main()
             auto json_obj = nlohmann::json::object({
                 {"status", 200},
                 {"response", json_matched}
-            });         
+            });
 
             response.set_status_code(http::http_status::Ok);
             response.set_body(json_obj);

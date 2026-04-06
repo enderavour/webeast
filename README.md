@@ -3,14 +3,14 @@
 ## ATTENTION! The project is not production ready yet. Currently it's built to minimal MVP. 
 
 ### Description
-- (The project was built using LLVM (Clang++), C++23 and Boost.Asio)
-- Currently the project is built using MSVC on Windows 10.
+- The project was built using LLVM (Clang++), C++23 and Boost.Asio on macOS.
+- Currently not built and tested for Linux.
+- As well it is is built and tested using MSVC on Windows 10.
 - Added thread pool support (25 clients maximum)
 - Added static file serving, static HTML pages
 - Added PUT, DELETE requests
 - Added keep-alive support 
 - Added support of dynamic path arguments
-- Fixed errors
 - Added logging. Implemented writing either to stdout or to log file by defining corresponding macros: LOGGING_ENABLED_STDOUT or LOGGING_ENABLED_FILE
 - Added minimal URL parsing
 - Added minimal ORM on top of SQLite3 DBMS. It is still messy
@@ -22,7 +22,8 @@
 - Started rewriting the architecture and naming conventions of the app parts. Not compatible with previous namings and scopes
 - Added configuration via TOML format. View ./config/webeast.config
 - Changed logging architecture.
-- Removed compilation macros (WEBEAST_SERVER_SYNC, WEBEAST_SERVER_ASYNC, LOGGING_ENABLED_STDOUT, LOGGING_ENABLED_FILE) based architecture. Now everything adjusts dynamically via webeast.toml or pulls from default settings 
+- Removed compilation macros (WEBEAST_SERVER_SYNC, WEBEAST_SERVER_ASYNC, LOGGING_ENABLED_STDOUT, LOGGING_ENABLED_FILE) based architecture. Now everything adjusts dynamically via webeast.toml or pulls from default settings
+- Modified ORM structure, rewrote logging inside ORM 
 
 ### TODO
 - Cleanup the code

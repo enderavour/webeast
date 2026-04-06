@@ -5,6 +5,7 @@
 #include <sqlite3.h>
 #include <vector>
 #include <string_view>
+#include "bind.hpp"
 #include "traits.hpp"
 
 namespace orm
@@ -19,7 +20,7 @@ std::string make_create_table_sql()
 
     bool first = true;
 
-    std::apply([&](auto... col) 
+    std::apply([&](auto... col)
     {
         (
             [&]
@@ -30,7 +31,7 @@ std::string make_create_table_sql()
 
                 if (!first)
                     sql += ",";
-                
+
                 sql += col.name;
                 sql += " ";
                 sql += get_sqlite_type<field_type>();
@@ -50,7 +51,7 @@ template<typename T>
 std::string make_insert_sql()
 {
     std::string sql = "INSERT INTO ";
-    sql += orm::orm_traits<T>::table;    
+    sql += orm::orm_traits<T>::table;
     sql += " (";
 
     bool first = true;
@@ -110,13 +111,10 @@ T read_column(sqlite3_stmt *stmt, int32_t idx)
     {
         return sqlite3_column_double(stmt, idx);
     }
-    else if constexpr (std::is_convertible_v<T, const char*>)
+    else if constexpr (std::is_same_v<T, std::string>)
     {
-        const char *txt = reinterpret_cast<const char*>(
-            sqlite3_column_text(stmt, idx)
-        );
-
-        return txt ? txt : "";
+        const unsigned char *txt = sqlite3_column_text(stmt, idx);
+        return txt ? reinterpret_cast<const char*>(txt) : "";
     }
 }
 
@@ -125,7 +123,7 @@ template<typename T>
 T read_row(sqlite3_stmt *stmt)
 {
     T obj{};
-    int32_t index = 0; 
+    int32_t index = 0;
 
     std::apply([&](auto... col)
     {
@@ -166,15 +164,8 @@ std::vector<T> select_all(sqlite3 *db)
 
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
     {
-#ifdef LOGGING_ENABLED_STDOUT
-        logger::error(std::format("Could not prepare SQL statement: {}", sqlite3_errmsg(db)));
-#elifdef LOGGING_ENABLED_FILE
-        logger::error(
-            defaults::LOG_FILE_HANDLE,
-            std::format("Could not prepare SQL statement: {}", sqlite3_errmsg(db))
-        );
-#endif
-    return {};
+        LOG_ERROR(get_config_opts(), std::format("Could not prepare SQL statement: {}", sqlite3_errmsg(db)));
+        return {};
     }
 
     std::vector<T> result;
@@ -192,15 +183,9 @@ std::vector<T> select_all(sqlite3 *db)
                 break;
             default:
                 sqlite3_finalize(stmt);
-#ifdef LOGGING_ENABLED_STDOUT
-        logger::error(std::format("SQLite step error: {}", sqlite3_errmsg(db)));
-#elifdef LOGGING_ENABLED_FILE
-        logger::error(
-            defaults::LOG_FILE_HANDLE,
-            std::format("SQLite step error: {}", sqlite3_errmsg(db))
-        );
-#endif
-        return {};
+                LOG_ERROR(get_config_opts(), std::format("SQLite step error: {}", sqlite3_errmsg(db)));
+                break;
+            return {};
         }
     }
     sqlite3_finalize(stmt);
@@ -215,14 +200,7 @@ std::vector<T> select_query(sqlite3 *db, std::string_view sql)
 
     if (sqlite3_prepare_v2(db, sql.data(), -1, &stmt, nullptr) != SQLITE_OK)
     {
-#ifdef LOGGING_ENABLED_STDOUT
-        logger::error(std::format("SQLite select error: {}", sqlite3_errmsg(db)));
-#elifdef LOGGING_ENABLED_FILE
-        logger::error(
-            defaults::LOG_FILE_HANDLE,
-            std::format("SQLite select error: {}", sqlite3_errmsg(db))
-        );
-#endif
+        LOG_ERROR(get_config_opts(), std::format("SQLite select error: {}", sqlite3_errmsg(db)));
         return {};
     }
 
@@ -240,15 +218,8 @@ std::vector<T> select_query(sqlite3 *db, std::string_view sql)
             case SQLITE_DONE:
                 break;
             default:
-#ifdef LOGGING_ENABLED_STDOUT
-        logger::error(std::format("SQLite step error: {}", sqlite3_errmsg(db)));
-#elifdef LOGGING_ENABLED_FILE
-        logger::error(
-            defaults::LOG_FILE_HANDLE,
-            std::format("SQLite step error: {}", sqlite3_errmsg(db))
-        );
-#endif
-        return {};        
+            LOG_ERROR(get_config_opts(), std::format("SQLite step error: {}", sqlite3_errmsg(db)));
+            return {};
         }
     }
 
@@ -267,14 +238,7 @@ void create_table(sqlite3 *db)
     if (sqlite3_exec(db, sql.data(), nullptr, nullptr, &err) != SQLITE_OK)
     {
         std::string msg = err;
-#ifdef LOGGING_ENABLED_STDOUT
-        logger::error(std::format("SQLite step error: {}", msg);
-#elifdef LOGGING_ENABLED_FILE
-        logger::error(
-            defaults::LOG_FILE_HANDLE,
-            std::format("SQLite step error: {}", msg)
-        );
-#endif
+        LOG_ERROR(get_config_opts(), std::format("SQLite step error: {}", msg));
         sqlite3_free(err);
         return;
     }

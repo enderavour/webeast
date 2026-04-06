@@ -3,7 +3,8 @@
 
 #include <sqlite3.h>
 #include <filesystem>
-#include "traits.hpp"
+#include "bind.hpp"
+#include "querygen.hpp"
 
 namespace orm
 {
@@ -16,29 +17,31 @@ public:
     {
         if (sqlite3_open(path.string().c_str(), &m_Conn) != SQLITE_OK)
         {
-    #ifdef LOGGING_ENABLED_STDOUT
-        logger::error(
-            std::format("Could not open connection to database: {}", sqlite3_errmsg(m_Conn))
-        );
-    #elifdef LOGGING_ENABLED_FILE
-        logger::error(
-            defaults::LOG_FILE_HANDLE,
-            std::format("Could not open connection to database: {}", sqlite3_errmsg(m_Conn))
-        );
-    #endif
+            LOG_ERROR(get_config_opts(), std::format("Could not open connection to database: {}", sqlite3_errmsg(m_Conn)));
         }
     }
-    
+
+    template<typename T>
+    void insert(const T &obj)
+    {
+        orm::insert(m_Conn, obj);
+    }
+
+    template<typename T>
+    void create_table()
+    {
+        orm::create_table<T>(m_Conn);
+    }
+
+    template<typename T>
+    std::vector<T> select_all()
+    {
+        return orm::select_all<T>(m_Conn);
+    }
+
     ~database()
     {
-    #ifdef LOGGING_ENABLED_STDOUT
-        logger::info("Closing database handle");
-    #elifdef LOGGING_ENABLED_FILE
-        logger::error(
-            defaults::LOG_FILE_HANDLE,
-            "Closing database handle"
-        );
-    #endif
+        LOG_INFO(get_config_opts(), "Closing database handle");
         sqlite3_close(m_Conn);
     }
 
