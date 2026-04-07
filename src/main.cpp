@@ -47,13 +47,10 @@ int32_t main()
         }
         db.insert(user);
 
-        // TODO: Segfaults on macOS, probably because on non-multithreaded build of SQLite
-        #ifndef __APPLE__
-        auto users = db.select_all<User>();
+        auto users = db.select<User>("WHERE id > ?", 25);
 
         for (const auto &u: users)
             LOG_INFO(CONFIG_OPTS, std::format("ID: {}, Name: {}", u.id, u.name));
-        #endif
 
         LOG_INFO(CONFIG_OPTS, "User was successfully added to database");
 

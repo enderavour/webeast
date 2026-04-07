@@ -39,6 +39,12 @@ public:
         return orm::select_all<T>(m_Conn);
     }
 
+    template<typename T, typename ...Args>
+    std::vector<T> select(std::string_view clause, Args&& ...args)
+    {
+        return orm::select_where<T, Args...>(m_Conn, clause, std::forward<Args>(args)...);
+    }
+
     ~database()
     {
         LOG_INFO(get_config_opts(), "Closing database handle");

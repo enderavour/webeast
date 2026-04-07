@@ -172,24 +172,24 @@ std::vector<T> select_all(sqlite3 *db)
 
     while (true)
     {
-        int32_t rc = sqlite3_step(stmt);
+        int rc = sqlite3_step(stmt);
 
-        switch (rc)
+        if (rc == SQLITE_ROW)
         {
-            case SQLITE_ROW:
-                result.emplace_back(read_row<T>(stmt));
-                break;
-            case SQLITE_DONE:
-                break;
-            default:
-                sqlite3_finalize(stmt);
-                LOG_ERROR(get_config_opts(), std::format("SQLite step error: {}", sqlite3_errmsg(db)));
-                break;
+            result.emplace_back(read_row<T>(stmt));
+        }
+        else if (rc == SQLITE_DONE)
+        {
+            break;
+        }
+        else
+        {
+            LOG_ERROR(get_config_opts(), std::format("SQLite step error: {}", sqlite3_errmsg(db)));
+            sqlite3_finalize(stmt);
             return {};
         }
     }
     sqlite3_finalize(stmt);
-
     return result;
 }
 
@@ -242,6 +242,49 @@ void create_table(sqlite3 *db)
         sqlite3_free(err);
         return;
     }
+}
+
+template<typename T, typename ...Args>
+std::vector<T> select_where(sqlite3 *db, std::string_view clause, Args&& ...args)
+{
+    std::string sql = make_select_sql<T>();
+    sql += " ";
+    sql += clause;
+
+    sqlite3_stmt *stmt{};
+    
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
+    {
+        LOG_ERROR(get_config_opts(), std::format("Error preparing query: {}", sqlite3_errmsg(db)));
+        return {};
+    }
+
+    int32_t index = 1;
+    (void)std::initializer_list<int32_t>{(bind(stmt, index++, std::forward<Args>(args)), 0)...};
+
+    std::vector<T> result;
+    while (true)
+    {
+        int32_t rc = sqlite3_step(stmt);
+
+        switch (rc)
+        {
+            case SQLITE_ROW:
+                result.emplace_back(read_row<T>(stmt));
+                break;
+            case SQLITE_DONE:
+                sqlite3_finalize(stmt);
+                return result;
+                break;
+            default:
+                LOG_ERROR(get_config_opts(), std::format("Step error: {}", sqlite3_errmsg(db)));
+                sqlite3_finalize(stmt);
+                return {};
+        }
+    }
+
+    sqlite3_finalize(stmt);
+    return result;
 }
 
 }
