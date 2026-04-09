@@ -7,20 +7,20 @@
 namespace urls = boost::urls;
 
 template<class T>
-requires std::is_convertible_v<T, std::string> || 
+requires std::is_convertible_v<T, std::string> ||
 std::is_same_v<std::decay_t<T>, nlohmann::json>
 http::response_builder<T>::response_builder() = default;
 
 template<class T>
-requires std::is_convertible_v<T, std::string> || 
+requires std::is_convertible_v<T, std::string> ||
 std::is_same_v<std::decay_t<T>, nlohmann::json>
 http::response_builder<T>::response_builder(
-    http::http_status statusCode, T &&body, 
+    http::http_status statusCode, T &&body,
     const std::map<std::string, std::string> &headers):
 m_StatusCode(statusCode), m_Body(body), m_Headers(headers) {}
 
 template<class T>
-requires std::is_convertible_v<T, std::string> || 
+requires std::is_convertible_v<T, std::string> ||
 std::is_same_v<std::decay_t<T>, nlohmann::json>
 void http::response_builder<T>::set_status_code(http::http_status code)
 {
@@ -29,7 +29,7 @@ void http::response_builder<T>::set_status_code(http::http_status code)
 
 
 template<class T>
-requires std::is_convertible_v<T, std::string> || 
+requires std::is_convertible_v<T, std::string> ||
 std::is_same_v<std::decay_t<T>, nlohmann::json>
 void http::response_builder<T>::set_header(const std::string &key, const std::string &value)
 {
@@ -38,16 +38,16 @@ void http::response_builder<T>::set_header(const std::string &key, const std::st
 
 
 template<class T>
-requires std::is_convertible_v<T, std::string> || 
+requires std::is_convertible_v<T, std::string> ||
 std::is_same_v<std::decay_t<T>, nlohmann::json>
-void http::response_builder<T>::set_body(const T &body) 
+void http::response_builder<T>::set_body(const T &body)
 {
     m_Body = body;
 }
 
 
 template<class T>
-requires std::is_convertible_v<T, std::string> || 
+requires std::is_convertible_v<T, std::string> ||
 std::is_same_v<std::decay_t<T>, nlohmann::json>
 http::http_status http::response_builder<T>::get_status_code() const
 {
@@ -56,7 +56,7 @@ http::http_status http::response_builder<T>::get_status_code() const
 
 
 template<class T>
-requires std::is_convertible_v<T, std::string> ||  
+requires std::is_convertible_v<T, std::string> ||
 std::is_same_v<std::decay_t<T>, nlohmann::json>
 std::map<std::string, std::string> http::response_builder<T>::get_headers() const
 {
@@ -65,7 +65,7 @@ std::map<std::string, std::string> http::response_builder<T>::get_headers() cons
 
 
 template<class T>
-requires std::is_convertible_v<T, std::string> || 
+requires std::is_convertible_v<T, std::string> ||
 std::is_same_v<std::decay_t<T>, nlohmann::json>
 std::decay_t<T> http::response_builder<T>::get_body() const
 {
@@ -86,13 +86,14 @@ http::http_method convert_method(const std::string &method)
         {"GET", http::http_method::Get},
         {"POST", http::http_method::Post},
         {"PUT", http::http_method::Put},
-        {"DELETE", http::http_method::Delete}
+        {"DELETE", http::http_method::Delete},
+        {"HEAD", http::http_method::Head}
     };
 
     auto http_method = methods_map.find(method);
     if (http_method == methods_map.end())
         return http::http_method::Unknown;
-    
+
     return http_method->second;
 }
 
@@ -107,11 +108,11 @@ http::request<std::string> http::deserialize_request(const std::string &source)
     std::getline(stream, _dummy);
 
     http::request<std::string> rq{};
-    
+
     rq.m_Method = convert_method(method);
     rq.m_Path = path;
     rq.m_HttpVersion = http;
-    
+
     std::string header;
     while (std::getline(stream, header))
     {
@@ -151,7 +152,7 @@ std::optional<std::string> status_to_string(http::http_status status)
     auto status_str = method_map.find(status);
     if (status_str == method_map.end())
         return {};
-    
+
     return status_str->second;
 }
 

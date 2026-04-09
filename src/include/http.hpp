@@ -8,12 +8,6 @@
 #include <boost/url.hpp>
 #include <nlohmann/json.hpp>
 
-#ifdef _WIN32 
-#undef DELETE
-#undef GET
-#undef POST
-#undef PUT
-#endif
 
 namespace http
 {
@@ -27,12 +21,14 @@ enum class http_method: int32_t
     Put,
     Delete,
     Unknown,
+    Head,
     // Versions for returning JSON version of method
     Json_Get,
     Json_Post,
     Json_Put,
     Json_Delete,
-    Json_Unknown
+    Json_Unknown,
+    Json_Head
 };
 
 enum class http_status
@@ -45,7 +41,7 @@ enum class http_status
 };
 
 template<class T>
-requires std::is_convertible_v<T, std::string> || 
+requires std::is_convertible_v<T, std::string> ||
 std::is_same_v<std::decay_t<T>, nlohmann::json>
 struct request
 {
@@ -60,7 +56,7 @@ struct request
 };
 
 template<class T>
-requires std::is_convertible_v<T, std::string> || 
+requires std::is_convertible_v<T, std::string> ||
 std::is_same_v<std::decay_t<T>, nlohmann::json>
 class response_builder
 {
@@ -69,7 +65,7 @@ public:
 
     response_builder();
     response_builder(http_status statusCode, T &&body, const std::map<std::string, std::string> &headers);
-    
+
     void set_status_code(http_status code);
     void set_header(const std::string &key, const std::string &value);
     void set_body(const T &body);

@@ -19,29 +19,34 @@ public:
     server(const std::string &addr, int32_t port);
     server(const std::string &addr, int32_t port, rt::router router);
     void include_router(rt::router router);
+
     // Static
     void get(const std::string &path, rt::callback_handler &&handler);
     void post(const std::string &path, rt::callback_handler &&handler);
     void put(const std::string &path, rt::callback_handler &&handler);
     void _delete(const std::string &path, rt::callback_handler &&handler);
+    void head(const std::string &path, rt::callback_handler &&handler);
 
     // Dynamic
     void get(const std::string &path, rt::dynamic_callback_handler &&handler);
     void post(const std::string &path, rt::dynamic_callback_handler &&handler);
     void put(const std::string &path, rt::dynamic_callback_handler &&handler);
     void _delete(const std::string &path, rt::dynamic_callback_handler &&handler);
+    void head(const std::string &path, rt::dynamic_callback_handler &&handler);
 
     // Json
     void get(const std::string &path, rt::json_callback_handler &&handler);
     void post(const std::string &path, rt::json_callback_handler &&handler);
     void put(const std::string &path, rt::json_callback_handler &&handler);
     void _delete(const std::string &path, rt::json_callback_handler &&handler);
+    void head(const std::string &path, rt::json_callback_handler &&handler);
 
     // Json Dynamic
     void get(const std::string &path, rt::json_dynamic_callback_handler &&handler);
     void post(const std::string &path, rt::json_dynamic_callback_handler &&handler);
     void put(const std::string &path, rt::json_dynamic_callback_handler &&handler);
     void _delete(const std::string &path, rt::json_dynamic_callback_handler &&handler);
+    void head(const std::string &path, rt::json_dynamic_callback_handler &&handler);
 
     void start();
     ~server();

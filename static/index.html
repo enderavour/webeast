@@ -1,35 +1,39 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>webeast</title>
-</head>
-<body>
-    <h1>Welcome to the main page of the server!</h1>
-    <script>
-         fetch("http://127.0.0.1:8080/jsonp", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                name: "John",
-                age: 25
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>webeast</title>
+    </head>
+    <body>
+        <h1>Welcome to the main page of the server!</h1>
+        <script>
+            fetch("http://127.0.0.1:8080/jsonp", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: "John",
+                    age: 25,
+                }),
             })
-        })
-        .then(resp => resp.json())
-        .then(data => alert(JSON.stringify(data))); 
+                .then((resp) => resp.json())
+                .then((data) => alert(JSON.stringify(data)));
 
-        fetch("http://127.0.0.1:8080/jsond/hello", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ test: 123 })
-        })
-        .then(resp => resp.json())
-        .then(data => console.log(data));
-    </script>
-</body>
+            fetch("http://127.0.0.1:8080/jsond/hello", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ test: 123 }),
+            })
+                .then((resp) => resp.json())
+                .then((data) => console.log(data));
+
+            fetch("http://127.0.0.1:8080/hd", {
+                method: "HEAD",
+            }).then((data) => console.log(data));
+        </script>
+    </body>
 </html>

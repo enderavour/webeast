@@ -100,12 +100,12 @@ bool rt::router::dispatch(const http::request<std::string> &req, http::response_
 }
 
 
-std::pair<int32_t, 
-std::variant<rt::callback_handler, rt::dynamic_callback_handler, 
-rt::json_callback_handler, rt::json_dynamic_callback_handler>> 
+std::pair<int32_t,
+std::variant<rt::callback_handler, rt::dynamic_callback_handler,
+rt::json_callback_handler, rt::json_dynamic_callback_handler>>
 rt::router::get_handler(const std::string &path, http::http_method method, boost::smatch &out_match) const
 {
-    if ((int32_t)method >= 5)
+    if ((int32_t)method >= 6)
     {
         for (const auto &jroute: m_JsonRoutes)
         {
@@ -127,9 +127,9 @@ rt::router::get_handler(const std::string &path, http::http_method method, boost
             out_match = match;
         }
 
-    LOG_WARN(CONFIG_OPTS, std::format("Dispatch: The provided JSON path is not found: {}", path));
+        LOG_WARN(CONFIG_OPTS, std::format("Dispatch: The provided JSON path is not found: {}", path));
 
-    return {0, m_notFoundHandler};
+        return {0, m_notFoundHandler};
     }
 
     auto callbacks_it = m_Callbacks.find(path);
@@ -140,14 +140,14 @@ rt::router::get_handler(const std::string &path, http::http_method method, boost
         auto method_it = method_map.find(method);
         if (method_it != method_map.end())
             return {0, method_it->second};
-        
+
         LOG_WARN(CONFIG_OPTS, std::format(
             "Dispatch: The provided path is not allowed at path: {}", path
         ));
 
         return {0, m_notAllowedHandler};
     }
-        
+
     for (const auto &route: m_DynamicRoutes)
     {
         if (route.method != method)

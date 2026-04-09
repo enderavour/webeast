@@ -2,6 +2,7 @@
 #include <iostream>
 #include <boost/system/error_code.hpp>
 #include "include/defs.hpp"
+#include "include/http.hpp"
 #include "include/logger.hpp"
 #include "include/config.hpp"
 #include <print>
@@ -13,9 +14,9 @@ using json = nlohmann::json;
 
 static conf::config_opts CONFIG_OPTS = defaults::CONFIG.get_config_opts();
 
-sv::server::server(const std::string &addr, int32_t port): 
+sv::server::server(const std::string &addr, int32_t port):
 m_Addr(addr), m_Port(port), m_AsioCTX(1), m_Acceptor(m_AsioCTX, tcp::endpoint(
-    make_address(addr), port)), m_Pool(CONFIG_OPTS.clients_capacity) 
+    make_address(addr), port)), m_Pool(CONFIG_OPTS.clients_capacity)
 {
     LOG_INFO(CONFIG_OPTS, std::format(
         "Created server with at address {} and port {}. Max connections: {}",
@@ -25,7 +26,7 @@ m_Addr(addr), m_Port(port), m_AsioCTX(1), m_Acceptor(m_AsioCTX, tcp::endpoint(
 
 sv::server::server(const std::string &addr, int32_t port, rt::router router):
 m_Router(router), m_Addr(addr), m_Port(port), m_Acceptor(m_AsioCTX, tcp::endpoint(
-    make_address(addr), port)), m_Pool(CONFIG_OPTS.clients_capacity) 
+    make_address(addr), port)), m_Pool(CONFIG_OPTS.clients_capacity)
 {
     LOG_INFO(CONFIG_OPTS, std::format(
         "Created server with at address {} and port {}. Max connections: {}",
@@ -42,7 +43,7 @@ void sv::server::include_router(rt::router router)
 void sv::server::get(const std::string &path, rt::callback_handler &&handler)
 {
     m_Router.register_handler(
-        path, http::http_method::Get, 
+        path, http::http_method::Get,
         std::forward<rt::callback_handler>(handler)
     );
 
@@ -54,7 +55,7 @@ void sv::server::get(const std::string &path, rt::callback_handler &&handler)
 void sv::server::post(const std::string &path, rt::callback_handler &&handler)
 {
     m_Router.register_handler(
-        path, http::http_method::Post, 
+        path, http::http_method::Post,
         std::forward<rt::callback_handler>(handler)
     );
     LOG_INFO(CONFIG_OPTS, std::format(
@@ -65,7 +66,7 @@ void sv::server::post(const std::string &path, rt::callback_handler &&handler)
 void sv::server::put(const std::string &path, rt::callback_handler &&handler)
 {
     m_Router.register_handler(
-        path, http::http_method::Put, 
+        path, http::http_method::Put,
         std::forward<rt::callback_handler>(handler)
     );
 
@@ -86,14 +87,27 @@ void sv::server::_delete(const std::string &path, rt::callback_handler &&handler
     ));
 }
 
+void sv::server::head(const std::string &path, rt::callback_handler &&handler)
+{
+    m_Router.register_handler(
+        path, http::http_method::Head,
+        std::forward<rt::callback_handler>(handler)
+    );
+
+    LOG_INFO(CONFIG_OPTS, std::format(
+        "Registering HEAD request at path: {}", path
+    ));
+}
+
+
 // Dynamic
 void sv::server::get(const std::string &path, rt::dynamic_callback_handler &&handler)
 {
     m_Router.register_dynamic(
-        path, http::http_method::Get, 
+        path, http::http_method::Get,
         std::forward<rt::dynamic_callback_handler>(handler)
     );
-    
+
     LOG_INFO(CONFIG_OPTS, std::format(
         "Registering dynamic GET request at path: {}", path
     ));
@@ -102,10 +116,10 @@ void sv::server::get(const std::string &path, rt::dynamic_callback_handler &&han
 void sv::server::post(const std::string &path, rt::dynamic_callback_handler &&handler)
 {
     m_Router.register_dynamic(
-        path, http::http_method::Post, 
+        path, http::http_method::Post,
         std::forward<rt::dynamic_callback_handler>(handler)
     );
-    
+
     LOG_INFO(CONFIG_OPTS, std::format(
         "Registering dynamic POST request at path: {}", path
     ));
@@ -114,7 +128,7 @@ void sv::server::post(const std::string &path, rt::dynamic_callback_handler &&ha
 void sv::server::put(const std::string &path, rt::dynamic_callback_handler &&handler)
 {
     m_Router.register_dynamic(
-        path, http::http_method::Put, 
+        path, http::http_method::Put,
         std::forward<rt::dynamic_callback_handler>(handler)
     );
 
@@ -135,10 +149,23 @@ void sv::server::_delete(const std::string &path, rt::dynamic_callback_handler &
     ));
 }
 
+void sv::server::head(const std::string &path, rt::dynamic_callback_handler &&handler)
+{
+    m_Router.register_dynamic(
+        path, http::http_method::Head,
+        std::forward<rt::dynamic_callback_handler>(handler)
+    );
+
+    LOG_INFO(CONFIG_OPTS, std::format(
+        "Registering dynamic HEAD request at path: {}", path
+    ));
+}
+
+
 // Json
 void sv::server::get(const std::string &path, rt::json_callback_handler &&handler)
 {
-    m_Router.register_json(        
+    m_Router.register_json(
         path, http::http_method::Json_Get,
         std::forward<rt::json_callback_handler>(handler)
     );
@@ -150,8 +177,8 @@ void sv::server::get(const std::string &path, rt::json_callback_handler &&handle
 
 void sv::server::post(const std::string &path, rt::json_callback_handler &&handler)
 {
-    m_Router.register_json(        
-        path, http::http_method::Json_Post, 
+    m_Router.register_json(
+        path, http::http_method::Json_Post,
         std::forward<rt::json_callback_handler>(handler)
     );
 
@@ -162,11 +189,11 @@ void sv::server::post(const std::string &path, rt::json_callback_handler &&handl
 
 void sv::server::put(const std::string &path, rt::json_callback_handler &&handler)
 {
-    m_Router.register_json(        
-        path, http::http_method::Json_Put, 
+    m_Router.register_json(
+        path, http::http_method::Json_Put,
         std::forward<rt::json_callback_handler>(handler)
     );
-    
+
     LOG_INFO(CONFIG_OPTS, std::format(
         "Registering JSON PUT request at path: {}", path
     ));
@@ -174,13 +201,25 @@ void sv::server::put(const std::string &path, rt::json_callback_handler &&handle
 
 void sv::server::_delete(const std::string &path, rt::json_callback_handler &&handler)
 {
-    m_Router.register_json(        
-        path, http::http_method::Json_Delete, 
+    m_Router.register_json(
+        path, http::http_method::Json_Delete,
         std::forward<rt::json_callback_handler>(handler)
     );
 
     LOG_INFO(CONFIG_OPTS, std::format(
         "Registering JSON DELETE request at path: {}", path
+    ));
+}
+
+void sv::server::head(const std::string &path, rt::json_callback_handler &&handler)
+{
+    m_Router.register_json(
+        path, http::http_method::Json_Head,
+        std::forward<rt::json_callback_handler>(handler)
+    );
+
+    LOG_INFO(CONFIG_OPTS, std::format(
+        "Registering JSON HEAD request at path: {}", path
     ));
 }
 
@@ -233,6 +272,18 @@ void sv::server::_delete(const std::string &path, rt::json_dynamic_callback_hand
     ));
 }
 
+void sv::server::head(const std::string &path, rt::json_dynamic_callback_handler &&handler)
+{
+    m_Router.register_json_dynamic(
+        path, http::http_method::Json_Head,
+        std::forward<rt::json_dynamic_callback_handler>(handler)
+    );
+
+    LOG_INFO(CONFIG_OPTS, std::format(
+        "Registering JSON Dynamic HEAD request at path: {}", path
+    ));
+}
+
 void sv::server::run_sync()
 {
     while (true)
@@ -260,11 +311,11 @@ boost::asio::awaitable<void> sv::server::run_async()
     auto executor = co_await boost::asio::this_coro::executor;
     while (true)
     {
-        try 
+        try
         {
             auto socket = std::make_shared<tcp::socket>(co_await m_Acceptor.async_accept(executor));
             LOG_INFO(CONFIG_OPTS, "Accepted new client");
-            boost::asio::co_spawn(executor, [this, sock = std::move(socket)]() mutable -> boost::asio::awaitable<void> 
+            boost::asio::co_spawn(executor, [this, sock = std::move(socket)]() mutable -> boost::asio::awaitable<void>
             {
                 co_await process_connection_async(sock);
             }, boost::asio::detached);
@@ -272,7 +323,7 @@ boost::asio::awaitable<void> sv::server::run_async()
         }
         catch (const std::exception &e)
         {
-            LOG_INFO(CONFIG_OPTS, std::format("Async accept error: {}", e.what()));         
+            LOG_INFO(CONFIG_OPTS, std::format("Async accept error: {}", e.what()));
         }
     }
 }
@@ -292,7 +343,7 @@ void sv::server::process_connection(std::shared_ptr<tcp::socket> socket)
 
             if (ec == boost::asio::error::eof)
                 break;
-            
+
             if (ec)
                 throw boost::system::system_error(ec);
 
@@ -313,10 +364,10 @@ void sv::server::process_connection(std::shared_ptr<tcp::socket> socket)
 
             auto request = http::deserialize_request(header_part);
 
-            // If headers contain Content-Type: application/json, then set 
+            // If headers contain Content-Type: application/json, then set
             // appropriate json method into request
             auto cont_t = request.m_Headers.find("Content-Type");
-            if (cont_t != request.m_Headers.end() && 
+            if (cont_t != request.m_Headers.end() &&
                 cont_t->second.find("application/json") != std::string::npos)
             {
                 switch (request.m_Method)
@@ -332,6 +383,9 @@ void sv::server::process_connection(std::shared_ptr<tcp::socket> socket)
                         break;
                     case http::http_method::Delete:
                         request.m_Method = http::http_method::Json_Delete;
+                        break;
+                    case http::http_method::Head:
+                        request.m_Method = http::http_method::Json_Head;
                         break;
                     default:
                         break;
@@ -423,7 +477,7 @@ void sv::server::process_connection(std::shared_ptr<tcp::socket> socket)
                     LOG_INFO(CONFIG_OPTS, "Client resetted the connection");
                 else
                 {
-                    LOG_ERROR(CONFIG_OPTS, std::format(                            
+                    LOG_ERROR(CONFIG_OPTS, std::format(
                         "Connection error occured: {}", ec.what()
                     ));
                 }
@@ -474,10 +528,10 @@ boost::asio::awaitable<void> sv::server::process_connection_async(std::shared_pt
 
             auto request = http::deserialize_request(header_part);
 
-            // If headers contain Content-Type: application/json, then set 
+            // If headers contain Content-Type: application/json, then set
             // appropriate json method into request
             auto cont_t = request.m_Headers.find("Content-Type");
-            if (cont_t != request.m_Headers.end() && 
+            if (cont_t != request.m_Headers.end() &&
                 cont_t->second.find("application/json") != std::string::npos)
             {
                 switch (request.m_Method)
@@ -493,6 +547,9 @@ boost::asio::awaitable<void> sv::server::process_connection_async(std::shared_pt
                         break;
                     case http::http_method::Delete:
                         request.m_Method = http::http_method::Json_Delete;
+                        break;
+                    case http::http_method::Head:
+                        request.m_Method = http::http_method::Json_Head;
                         break;
                     default:
                         break;
@@ -586,7 +643,7 @@ boost::asio::awaitable<void> sv::server::process_connection_async(std::shared_pt
                 }
                 else
                 {
-                    LOG_ERROR(CONFIG_OPTS, std::format(                            
+                    LOG_ERROR(CONFIG_OPTS, std::format(
                         "Connection error occured: {}", ec.what()
                     ));
                 }
@@ -613,7 +670,7 @@ void sv::server::start()
 
     if (CONFIG_OPTS.server == conf::server_type::Sync)
     {
-        run_sync();  
+        run_sync();
     }
     else if (CONFIG_OPTS.server == conf::server_type::Async)
     {
@@ -622,7 +679,7 @@ void sv::server::start()
             [this]() -> boost::asio::awaitable<void> { co_await run_async(); },
             boost::asio::detached
         );
-        m_AsioCTX.run(); 
+        m_AsioCTX.run();
     }
 }
 

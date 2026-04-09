@@ -122,5 +122,13 @@ int32_t main()
         }
     );
 
+    server.head("/hd",
+        [](const http::request<std::string> &request, http::response_builder<std::string> &response, boost::smatch &_match)
+        {
+            for (const auto &hdr: request.m_Headers)
+                response.set_header(hdr.first, hdr.second);
+        }
+    );
+
     server.start();
 }
