@@ -237,7 +237,7 @@ void create_table(sqlite3 *db)
 
     if (sqlite3_exec(db, sql.data(), nullptr, nullptr, &err) != SQLITE_OK)
     {
-        std::string msg = err;
+        std::string msg = err ? err : "Unknown SQL Error";
         LOG_ERROR(get_config_opts(), std::format("SQLite step error: {}", msg));
         sqlite3_free(err);
         return;
@@ -252,7 +252,7 @@ std::vector<T> select_where(sqlite3 *db, std::string_view clause, Args&& ...args
     sql += clause;
 
     sqlite3_stmt *stmt{};
-    
+
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
     {
         LOG_ERROR(get_config_opts(), std::format("Error preparing query: {}", sqlite3_errmsg(db)));

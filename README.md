@@ -4,7 +4,7 @@
 
 ### Description
 - The project was built using LLVM (Clang++), C++23 and Boost.Asio on macOS.
-- Currently not built and tested for Linux.
+- Built and tested on Linux, corrected null dereferencing bug in ORM for Linux. 
 - As well it is is built and tested using MSVC on Windows 10.
 - Added thread pool support (25 clients maximum)
 - Added static file serving, static HTML pages
