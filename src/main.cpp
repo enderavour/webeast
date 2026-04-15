@@ -27,6 +27,7 @@ int32_t main()
     rt::router router;
     server.include_router(router);
 
+    // Middleware
     server.use([](auto &req, auto &res, auto next)
     {
         auto t1 = std::chrono::high_resolution_clock::now();
