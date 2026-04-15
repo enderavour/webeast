@@ -24,12 +24,12 @@
 - Changed logging architecture.
 - Removed compilation macros (WEBEAST_SERVER_SYNC, WEBEAST_SERVER_ASYNC, LOGGING_ENABLED_STDOUT, LOGGING_ENABLED_FILE) based architecture. Now everything adjusts dynamically via webeast.toml or pulls from default settings
 - Modified ORM structure, rewrote logging inside ORM 
+- Added initial middleware, will be extended in the future
+- Added time execution logging per request 
 
 ### TODO
 - Cleanup the code
 - Modify the architecture of ORM
-- Test config implementations
-- Implement middleware
 
 ### Prerequisites:
 - Boost.Asio

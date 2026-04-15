@@ -6,8 +6,16 @@
 #include "router.hpp"
 #include "tpool.hpp"
 #include <memory>
+#include <vector>
 
 using boost::asio::ip::tcp;
+
+using middleware_t = std::function<void(
+    http::request<std::string>&,
+    http::response_builder<std::string>&,
+    std::function<void()>
+)>;
+
 
 namespace sv
 {
@@ -48,6 +56,8 @@ public:
     void _delete(const std::string &path, rt::json_dynamic_callback_handler &&handler);
     void head(const std::string &path, rt::json_dynamic_callback_handler &&handler);
 
+    void use(middleware_t &&mw);
+
     void start();
     ~server();
 private:
@@ -57,6 +67,7 @@ private:
     boost::asio::io_context m_AsioCTX;
     tcp::acceptor m_Acceptor;
     tpool::thread_pool m_Pool;
+    std::vector<middleware_t> m_Middlewares;
     void process_connection(std::shared_ptr<tcp::socket> socket);
     boost::asio::awaitable<void> process_connection_async(std::shared_ptr<tcp::socket> socket);
     void run_sync();

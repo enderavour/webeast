@@ -8,6 +8,7 @@
 #include <print>
 #include <format>
 #include <nlohmann/json.hpp>
+#include <utility>
 
 using boost::asio::ip::make_address;
 using json = nlohmann::json;
@@ -412,53 +413,70 @@ void sv::server::process_connection(std::shared_ptr<tcp::socket> socket)
 
             boost::smatch _match;
             auto handler_pair = m_Router.get_handler(request.m_Path, request.m_Method, _match);
-            rt::callback_handler static_handler;
-            rt::dynamic_callback_handler dynamic_handler;
-            rt::json_callback_handler json_handler;
-            rt::json_dynamic_callback_handler json_dynamic;
 
-            if (handler_pair.first == 0)
+
+            std::function<void()> final_handler = [&]()
             {
-                static_handler = std::get<rt::callback_handler>(handler_pair.second);
-                static_handler(request, response);
-            }
-            else if (handler_pair.first == 1)
+                if (handler_pair.first == 0)
+                {
+                    auto h = std::get<rt::callback_handler>(handler_pair.second);
+                    h(request, response);
+                }
+                else if (handler_pair.first == 1)
+                {
+                    auto h = std::get<rt::dynamic_callback_handler>(handler_pair.second);
+                    h(request, response, _match);
+                }
+                else if (handler_pair.first == 2)
+                {
+                    auto h = std::get<rt::json_callback_handler>(handler_pair.second);
+
+                    auto j_body = json::parse(request.m_Body);
+
+                    http::request<json> j_request{
+                        request.m_Method,
+                        request.m_Path,
+                        request.m_HttpVersion,
+                        request.m_Headers,
+                        request.m_Params,
+                        j_body
+                    };
+
+                    h(j_request, j_response);
+                }
+                else if (handler_pair.first == 3)
+                {
+                    auto h = std::get<rt::json_dynamic_callback_handler>(handler_pair.second);
+
+                    auto j_body = json::parse(request.m_Body);
+
+                    http::request<json> j_request{
+                        request.m_Method,
+                        request.m_Path,
+                        request.m_HttpVersion,
+                        request.m_Headers,
+                        request.m_Params,
+                        j_body
+                    };
+
+                    h(j_request, j_response, _match);
+                }
+            };
+
+            size_t i = 0;
+
+            std::function<void()> next = [&]()
             {
-                dynamic_handler = std::get<rt::dynamic_callback_handler>(handler_pair.second);
-                dynamic_handler(request, response, _match);
-            }
-            else if (handler_pair.first == 2)
-            {
-                json_handler = std::get<rt::json_callback_handler>(handler_pair.second);
+                if (i < m_Middlewares.size())
+                {
+                    auto &mw = m_Middlewares[i++];
+                    mw(request, response, next);
+                }
+                else
+                    final_handler();
+            };
 
-                auto j_body = json::parse(request.m_Body);
-                http::request<json> j_request{
-                    request.m_Method,
-                    request.m_Path,
-                    request.m_HttpVersion,
-                    request.m_Headers,
-                    request.m_Params,
-                    j_body
-                };
-
-                json_handler(j_request, j_response);
-            }
-            else if (handler_pair.first == 3)
-            {
-                json_dynamic = std::get<rt::json_dynamic_callback_handler>(handler_pair.second);
-
-                auto j_body = json::parse(request.m_Body);
-                http::request<json> j_request{
-                    request.m_Method,
-                    request.m_Path,
-                    request.m_HttpVersion,
-                    request.m_Headers,
-                    request.m_Params,
-                    j_body
-                };
-
-                json_dynamic(j_request, j_response, _match);
-            }
+            next();
 
             response.set_header("Connection", "keep-alive");
             response.set_header("Content-Length", std::to_string(response.get_body().size()));
@@ -576,53 +594,71 @@ boost::asio::awaitable<void> sv::server::process_connection_async(std::shared_pt
 
             boost::smatch _match;
             auto handler_pair = m_Router.get_handler(request.m_Path, request.m_Method, _match);
-            rt::callback_handler static_handler;
-            rt::dynamic_callback_handler dynamic_handler;
-            rt::json_callback_handler json_handler;
-            rt::json_dynamic_callback_handler json_dynamic;
 
-            if (handler_pair.first == 0)
+            std::function<void()> final_handler = [&]()
             {
-                static_handler = std::get<rt::callback_handler>(handler_pair.second);
-                static_handler(request, response);
-            }
-            else if (handler_pair.first == 1)
+                if (handler_pair.first == 0)
+                {
+                    auto h = std::get<rt::callback_handler>(handler_pair.second);
+                    h(request, response);
+                }
+                else if (handler_pair.first == 1)
+                {
+                    auto h = std::get<rt::dynamic_callback_handler>(handler_pair.second);
+                    h(request, response, _match);
+                }
+                else if (handler_pair.first == 2)
+                {
+                    auto h = std::get<rt::json_callback_handler>(handler_pair.second);
+
+                    auto j_body = json::parse(request.m_Body);
+
+                    http::request<json> j_request{
+                        request.m_Method,
+                        request.m_Path,
+                        request.m_HttpVersion,
+                        request.m_Headers,
+                        request.m_Params,
+                        j_body
+                    };
+
+                    h(j_request, j_response);
+                }
+                else if (handler_pair.first == 3)
+                {
+                    auto h = std::get<rt::json_dynamic_callback_handler>(handler_pair.second);
+
+                    auto j_body = json::parse(request.m_Body);
+
+                    http::request<json> j_request{
+                        request.m_Method,
+                        request.m_Path,
+                        request.m_HttpVersion,
+                        request.m_Headers,
+                        request.m_Params,
+                        j_body
+                    };
+
+                    h(j_request, j_response, _match);
+                }
+            };
+
+            size_t i = 0;
+
+            std::function<void()> next = [&]()
             {
-                dynamic_handler = std::get<rt::dynamic_callback_handler>(handler_pair.second);
-                dynamic_handler(request, response, _match);
-            }
-            else if (handler_pair.first == 2)
-            {
-                json_handler = std::get<rt::json_callback_handler>(handler_pair.second);
+                if (i < m_Middlewares.size())
+                {
+                    auto &mw = m_Middlewares[i++];
+                    mw(request, response, next);
+                }
+                else
+                {
+                    final_handler();
+                }
+            };
 
-                auto j_body = json::parse(request.m_Body);
-                http::request<json> j_request{
-                    request.m_Method,
-                    request.m_Path,
-                    request.m_HttpVersion,
-                    request.m_Headers,
-                    request.m_Params,
-                    j_body
-                };
-
-                json_handler(j_request, j_response);
-            }
-            else if (handler_pair.first == 3)
-            {
-                json_dynamic = std::get<rt::json_dynamic_callback_handler>(handler_pair.second);
-
-                auto j_body = json::parse(request.m_Body);
-                http::request<json> j_request{
-                    request.m_Method,
-                    request.m_Path,
-                    request.m_HttpVersion,
-                    request.m_Headers,
-                    request.m_Params,
-                    j_body
-                };
-
-                json_dynamic(j_request, j_response, _match);
-            }
+            next();
 
             response.set_header("Connection", "keep-alive");
             response.set_header("Content-Length", std::to_string(response.get_body().size()));
@@ -681,6 +717,11 @@ void sv::server::start()
         );
         m_AsioCTX.run();
     }
+}
+
+void sv::server::use(middleware_t &&mw)
+{
+    m_Middlewares.push_back(std::forward<middleware_t>(mw));
 }
 
 sv::server::~server()

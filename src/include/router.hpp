@@ -14,9 +14,9 @@ namespace rt
 {
 
 using callback_handler = std::function<void(const http::request<std::string>&, http::response_builder<std::string>&)>;
-using dynamic_callback_handler = 
+using dynamic_callback_handler =
 std::function<void(const http::request<std::string>&, http::response_builder<std::string>&, boost::smatch&)>;
-using json_callback_handler = 
+using json_callback_handler =
 std::function<void(const http::request<nlohmann::json>&, http::response_builder<nlohmann::json>&)>;
 using json_dynamic_callback_handler =
  std::function<void(const http::request<nlohmann::json>&, http::response_builder<nlohmann::json>&, boost::smatch&)>;
@@ -53,10 +53,10 @@ public:
     void register_json_dynamic(const std::string &path, http::http_method method, json_dynamic_callback_handler &&handler);
     void set_404_handler(callback_handler &&callback);
     void set_405_handler(callback_handler &&callback);
-    std::pair<int32_t, 
+    std::pair<int32_t,
     std::variant<
-    callback_handler, dynamic_callback_handler, json_callback_handler, 
-    json_dynamic_callback_handler>> 
+    callback_handler, dynamic_callback_handler, json_callback_handler,
+    json_dynamic_callback_handler>>
     get_handler(const std::string &path, http::http_method method, boost::smatch &out_match) const;
     bool dispatch(const http::request<std::string> &req, http::response_builder<std::string> &res);
     ~router();

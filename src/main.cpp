@@ -12,6 +12,8 @@
 #include <new>
 #include <format>
 
+#include <chrono>
+
 static conf::config_opts CONFIG_OPTS = defaults::CONFIG.get_config_opts();
 
 int32_t main()
@@ -24,6 +26,18 @@ int32_t main()
 
     rt::router router;
     server.include_router(router);
+
+    server.use([](auto &req, auto &res, auto next)
+    {
+        auto t1 = std::chrono::high_resolution_clock::now();
+        next();
+        auto t2 = std::chrono::high_resolution_clock::now();
+
+        auto ms = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
+
+        LOG_INFO(CONFIG_OPTS, std::format("Time elapsed for request: {} us", ms));
+    });
+
     server.get("/", static_file(static_dir, "index.html"));
     server.get("/pic", static_file(static_dir, "pic.html"));
     server.put("/", [&static_dir](const http::request<std::string> &request, http::response_builder<std::string> &response) {
