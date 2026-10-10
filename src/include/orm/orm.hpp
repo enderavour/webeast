@@ -8,7 +8,8 @@
 #include "database.hpp"
 #include "querygen.hpp"
 #include "statement.hpp"
-#include "traits.hpp"
-
+#include "model.hpp"
+#include "timestamp.hpp"
+#include "foreignkey.hpp"
 
 #endif

@@ -1,7 +1,7 @@
 #include "include/server.hpp"
 #include <iostream>
 #include <boost/system/error_code.hpp>
-#include "include/defs.hpp"
+#include "include/defaults.hpp"
 #include "include/http.hpp"
 #include "include/logger.hpp"
 #include "include/config.hpp"

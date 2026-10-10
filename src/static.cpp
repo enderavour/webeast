@@ -1,6 +1,6 @@
 #include "include/static.hpp"
 #include "include/logger.hpp"
-#include "include/defs.hpp"
+#include "include/defaults.hpp"
 #include <fstream>
 #include <vector>
 #include <format>
@@ -12,7 +12,7 @@ static conf::config_opts CONFIG_OPTS = defaults::CONFIG.get_config_opts();
 sd::static_dir::static_dir() = default;
 
 sd::static_dir::static_dir(const fs::path &sdir_path):
-static_dir_path(sdir_path) 
+static_dir_path(sdir_path)
 {
     LOG_INFO(CONFIG_OPTS, std::format("Initialized static directory with path: {}", sdir_path.string()));
 }

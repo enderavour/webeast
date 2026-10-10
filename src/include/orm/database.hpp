@@ -5,6 +5,9 @@
 #include <filesystem>
 #include "bind.hpp"
 #include "querygen.hpp"
+#include <format>
+#include <stdexcept>
+
 
 namespace orm
 {
@@ -13,11 +16,32 @@ class database
 {
 public:
     database() = delete;
+
+    // Removing copy constructor and copy assignment operator in order to avoid double ownership and double free
+    database(const database&) = delete;
+    database operator=(const database&) = delete;
+
     database(const std::filesystem::path &path)
     {
         if (sqlite3_open(path.string().c_str(), &m_Conn) != SQLITE_OK)
         {
             LOG_ERROR(get_config_opts(), std::format("Could not open connection to database: {}", sqlite3_errmsg(m_Conn)));
+        }
+
+        // Turn on foreign key check for every connection
+        if (sqlite3_exec(m_Conn, "PRAGMA foreign_keys = ON", nullptr, nullptr, nullptr) != SQLITE_OK)
+        {
+            std::string err = sqlite3_errmsg(m_Conn);
+
+            sqlite3_close(m_Conn);
+            m_Conn = nullptr;
+
+            throw std::runtime_error(
+                std::format(
+                    "Could not enable foreign keys: {}",
+                    err
+                )
+            );
         }
     }
 

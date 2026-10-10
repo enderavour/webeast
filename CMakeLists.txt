@@ -15,7 +15,7 @@ find_package(nlohmann_json CONFIG REQUIRED)
 if (UNIX AND NOT APPLE)
     find_package(SQLite3 REQUIRED)
 else()
-    find_package(sqlite3 CONFIG REQUIRED)
+    find_package(SQLite3 REQUIRED)
 endif()
 
 include_directories(${Boost_INCLUDE_DIR})

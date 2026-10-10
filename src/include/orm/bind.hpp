@@ -5,10 +5,12 @@
 #include <type_traits>
 #include <cstdint>
 #include <string>
-#include "traits.hpp"
+#include <chrono>
+#include "model.hpp"
 #include "../config.hpp"
-#include "../defs.hpp"
+#include "../defaults.hpp"
 #include "../logger.hpp"
+#include "timestamp.hpp"
 
 inline conf::config_opts &get_config_opts()
 {
@@ -51,7 +53,8 @@ constexpr const char *get_sqlite_type()
     if constexpr (
         std::is_same_v<T, int32_t> ||
         std::is_same_v<T, int64_t> ||
-        std::is_same_v<T, bool>
+        std::is_same_v<T, bool> ||
+        std::is_same_v<T, std::chrono::time_point<std::chrono::system_clock>>
     )
         return "INTEGER";
     else if constexpr (
@@ -74,8 +77,20 @@ void bind_object(sqlite3_stmt *stmt, const T &obj)
 
     std::apply([&](auto... col)
     {
-        ((bind(stmt, index++, obj.*(col.member))), ...);
-    }, orm_traits<T>::columns);
+        (
+            [&]
+            {
+                if constexpr (!orm::is_timestamp_v<decltype(col)>)
+                {
+                    bind(
+                        stmt,
+                        index++,
+                        obj.*(col.member)
+                    );
+                }
+            }(), ...
+        );
+    }, orm::orm_model<T>::columns);
 }
 
 };

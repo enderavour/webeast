@@ -1,5 +1,5 @@
 #include "include/config.hpp"
-#include "include/defs.hpp"
+#include "include/defaults.hpp"
 #include <print>
 #include <toml++/toml.hpp>
 
@@ -27,7 +27,7 @@ conf::config::config(const std::filesystem::path &path)
 void conf::config::read_file(const std::filesystem::path &path)
 {
     conf::config_opts _copts;
-    try 
+    try
     {
         toml::table tbl = toml::parse_file(path.c_str());
 
@@ -37,19 +37,19 @@ void conf::config::read_file(const std::filesystem::path &path)
         _copts.log_file_path = tbl["config"]["log_file"].as_string()->get();
 
         auto log_type = tbl["config"]["log_type"].as_string()->get();
-    
+
         if (log_type == "stdout")
             _copts.log = conf::logging_opts::Stdout;
         else if (log_type == "file")
             _copts.log = conf::logging_opts::File;
-        
+
         auto server_t = tbl["config"]["server_type"].as_string()->get();
 
         if (server_t == "sync")
             _copts.server = conf::server_type::Sync;
         else if (server_t == "async")
             _copts.server = conf::server_type::Async;
-        
+
         m_Copts = _copts;
     }
     catch (const toml::parse_error &e)

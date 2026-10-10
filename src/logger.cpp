@@ -1,5 +1,5 @@
 #include "include/logger.hpp"
-#include "include/defs.hpp"
+#include "include/defaults.hpp"
 #include <string>
 #include <chrono>
 #include <print>
@@ -32,20 +32,20 @@ void logger::warn(std::string_view msg)
 
 void logger::error(std::string_view msg)
 {
-    std::println("{} [ERROR] {}", get_time(), msg);   
+    std::println("{} [ERROR] {}", get_time(), msg);
 }
 
 void logger::trace(std::string_view msg)
 {
-    std::println("{} [TRACE] {}", get_time(), msg); 
+    std::println("{} [TRACE] {}", get_time(), msg);
 }
 
 void logger::debug(std::string_view msg)
 {
-    std::println("{} [DEBUG] {}", get_time(), msg); 
+    std::println("{} [DEBUG] {}", get_time(), msg);
 }
 
-// Ostream 
+// Ostream
 void logger::info(std::ostream &out, std::string_view msg)
 {
     out << std::format("{} [INFO] {}", get_time(), msg) << std::endl;
@@ -58,7 +58,7 @@ void logger::warn(std::ostream &out, std::string_view msg)
 
 void logger::error(std::ostream &out, std::string_view msg)
 {
-    out << std::format("{} [ERROR] {}", get_time(), msg) << std::endl;  
+    out << std::format("{} [ERROR] {}", get_time(), msg) << std::endl;
 }
 
 void logger::trace(std::ostream &out, std::string_view msg)
@@ -68,13 +68,13 @@ void logger::trace(std::ostream &out, std::string_view msg)
 
 void logger::debug(std::ostream &out, std::string_view msg)
 {
-    out << std::format("{} [DEBUG] {}", get_time(), msg) << std::endl; 
+    out << std::format("{} [DEBUG] {}", get_time(), msg) << std::endl;
 }
 
 void logger::open_log_file(const std::filesystem::path &fname)
 {
     std::filesystem::create_directories(fname.parent_path());
-    LOG_FILE_HANDLE.open(fname, std::ios_base::out);
+    LOG_FILE_HANDLE.open(fname, std::ios_base::out | std::ios_base::app);
 
     if (!LOG_FILE_HANDLE.is_open())
         std::println("[ERROR] Error opening log file");

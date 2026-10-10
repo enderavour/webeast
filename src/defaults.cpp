@@ -1,4 +1,4 @@
-#include "include/defs.hpp"
+#include "include/defaults.hpp"
 #include "include/logger.hpp"
 
 namespace defaults
@@ -32,5 +32,5 @@ namespace defaults
     {
         res.set_status_code(http::http_status::MethodNotAllowed);
         res.set_body("405 Not Allowed");
-    }  
+    }
 }

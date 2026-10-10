@@ -1,12 +1,18 @@
 #ifndef QUERYGEN_IMPL_H
 #define QUERYGEN_IMPL_H
 
+#include <cstddef>
 #include <string>
+#include <format>
 #include <sqlite3.h>
+#include <type_traits>
 #include <vector>
 #include <string_view>
+#include <algorithm>
 #include "bind.hpp"
-#include "traits.hpp"
+#include "timestamp.hpp"
+#include "model.hpp"
+#include "foreignkey.hpp"
 
 namespace orm
 {
@@ -15,7 +21,7 @@ template<typename T>
 std::string make_create_table_sql()
 {
     std::string sql = "CREATE TABLE IF NOT EXISTS ";
-    sql += orm::orm_traits<T>::table;
+    sql += orm::orm_model<T>::table;
     sql += "(";
 
     bool first = true;
@@ -25,22 +31,72 @@ std::string make_create_table_sql()
         (
             [&]
             {
-                using field_type = std::remove_cvref_t<
-                    decltype(std::declval<T>().*(col.member))
-                >;
+
 
                 if (!first)
                     sql += ",";
 
                 sql += col.name;
                 sql += " ";
-                sql += get_sqlite_type<field_type>();
+
+                if constexpr (orm::is_timestamp_v<decltype(col)>)
+                {
+                    sql += "INTEGER NOT NULL DEFAULT(unixepoch())";
+                }
+
+                else
+                {
+                    using field_type = std::remove_cvref_t<
+                        decltype(std::declval<T>().*(col.member))
+                    >;
+
+                    sql += get_sqlite_type<field_type>();
+
+                    if (col.primary_key)
+                        sql += " PRIMARY KEY";
+
+                }
 
                 first = false;
             }(), ...
         );
 
-    }, orm_traits<T>::columns);
+    }, orm_model<T>::columns);
+
+    std::apply([&](auto... cn)
+    {
+        (
+            [&]
+            {
+                if (orm::is_fk_v<decltype(cn)>)
+                {
+                    if (!first)
+                        sql += ",";
+
+                    std::string cols, ref_cols;
+
+                    std::for_each(cn.columns.begin(), cn.columns.end(), [&cols](std::string_view c){
+                        cols += c;
+                        cols += ",";
+                    });
+                    cols.pop_back(); // remove trailing comma after the last element was pushed
+
+                    std::for_each(cn.referenced_columns.begin(), cn.referenced_columns.end(), [&ref_cols](std::string_view c){
+                        ref_cols += c;
+                        ref_cols += ",";
+                    });
+                    ref_cols.pop_back(); // remove trailing comma after the last element was pushed
+
+                    sql += std::format(
+                        "FOREIGN KEY ({}) REFERENCES {}({})",
+                        cols, cn.referenced_table, ref_cols
+                    );
+                }
+
+                first = false;
+            }(), ...
+        );
+    }, orm_model<T>::constraints);
 
     sql += ")";
 
@@ -51,19 +107,33 @@ template<typename T>
 std::string make_insert_sql()
 {
     std::string sql = "INSERT INTO ";
-    sql += orm::orm_traits<T>::table;
+    sql += orm::orm_model<T>::table;
     sql += " (";
 
     bool first = true;
+    size_t count = 0;
 
     std::apply([&](auto... col)
     {
-        ((sql += (first ? "" : ",") + std::string(col.name), first = false), ...);
-    }, orm::orm_traits<T>::columns);
+        (
+            [&]
+            {
+                if constexpr (!orm::is_timestamp_v<decltype(col)>)
+                {
+                    if (!first)
+                        sql += ",";
+
+                    sql += col.name;
+                    first = false;
+                    ++count;
+                }
+            }(), ...
+        );
+    }, orm::orm_model<T>::columns);
 
     sql += ") VALUES (";
 
-    constexpr size_t N = std::tuple_size_v<decltype(orm::orm_traits<T>::columns)>;
+    constexpr size_t N = std::tuple_size_v<decltype(orm::orm_model<T>::columns)>;
 
     for (size_t i = 0; i < N; ++i)
     {
@@ -127,13 +197,22 @@ T read_row(sqlite3_stmt *stmt)
 
     std::apply([&](auto... col)
     {
-        (void)std::initializer_list<int>
-        {
-            (obj.*(col.member) = read_column<
-                std::remove_cvref_t<decltype(std::declval<T>().*(col.member))>
-            >(stmt, index++), 0)...
-        };
-    }, orm::orm_traits<T>::columns);
+        (
+            [&]
+            {
+                if constexpr (!orm::is_timestamp_v<decltype(col)>)
+                {
+                    obj.*(col.member) = read_column<
+                        std::remove_cvref_t<
+                            decltype(
+                                std::declval<T>().*(col.member)
+                            )
+                        >
+                    >(stmt, index++);
+                }
+            }(), ...
+        );
+    }, orm::orm_model<T>::columns);
 
     return obj;
 }
@@ -146,11 +225,23 @@ std::string make_select_sql()
 
     std::apply([&](auto... col)
     {
-        ((sql += (first ? "" : ",") + std::string(col.name), first = false), ...);
-    }, orm::orm_traits<T>::columns);
+        (
+            [&]
+            {
+                if constexpr (!orm::is_timestamp_v<decltype(col)>)
+                {
+                    if (!first)
+                        sql += ",";
+
+                    sql += col.name;
+                    first = false;
+                }
+            }(), ...
+        );
+    }, orm::orm_model<T>::columns);
 
     sql += " FROM ";
-    sql += orm::orm_traits<T>::table;
+    sql += orm::orm_model<T>::table;
 
     return sql;
 }
@@ -216,10 +307,12 @@ std::vector<T> select_query(sqlite3 *db, std::string_view sql)
                 result.emplace_back(read_row<T>(stmt));
                 break;
             case SQLITE_DONE:
-                break;
+                sqlite3_finalize(stmt);
+                return result;
             default:
-            LOG_ERROR(get_config_opts(), std::format("SQLite step error: {}", sqlite3_errmsg(db)));
-            return {};
+                LOG_ERROR(get_config_opts(), std::format("SQLite step error: {}", sqlite3_errmsg(db)));
+                sqlite3_finalize(stmt);
+                return {};
         }
     }
 

@@ -7,7 +7,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <thread>
-#include "server.hpp"
+#include <boost/asio.hpp>
 
 using boost::asio::ip::tcp;
 
@@ -17,7 +17,7 @@ namespace tpool
 class thread_pool
 {
 public:
-    thread_pool(int32_t worker_capacity);
+    explicit thread_pool(int32_t worker_capacity);
     ~thread_pool();
     void add_task(std::function<void()> task);
     int32_t active_tasks_count() const;
