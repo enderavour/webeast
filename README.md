@@ -26,6 +26,10 @@
 - Modified ORM structure, rewrote logging inside ORM 
 - Added initial middleware, will be extended in the future
 - Added time execution logging per request 
+- Fixed logging 
+- Added schema validation 
+- Implemented POST webpoints 
+* Testing POST webpoints 
 
 ### TODO
 - Cleanup the code

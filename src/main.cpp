@@ -7,6 +7,7 @@
 #include "include/logger.hpp"
 #include "include/orm/orm.hpp"
 #include "models/create.hpp"
+#include "models/products.hpp"
 #include "services/include/product.hpp"
 #include <format>
 
@@ -84,7 +85,6 @@ int32_t main()
         {
             LOG_INFO(CONFIG_OPTS, "Entered /api/products handler");
 
-            /*
             auto products = pserv.get_all();
 
             nlohmann::json result = nlohmann::json::array();
@@ -99,11 +99,66 @@ int32_t main()
                     {"stock", product.stock}
                 });
             }
-            */
+
 
             response.set_status_code(http::http_status::Ok);
-            //response.set_body(result);
+            response.set_body(result);
             response.set_header("Content-Type", "application/json");
+        }
+    );
+
+    server.get("/api/products/{}",
+        [&pserv](
+            const http::request<nlohmann::json>& request,
+            http::response_builder<nlohmann::json>& response,
+            boost::smatch _match
+        )
+        {
+            int32_t product_id = 0;
+
+            try
+            {
+                const std::string id_str = dynamic_get_match(_match, 1);
+                std::size_t parsed = 0;
+
+                product_id = std::stoi(id_str, &parsed);
+
+                if (parsed != id_str.size() || product_id <= 0)
+                    throw std::invalid_argument("Invalid product ID");
+            }
+            catch (const std::exception&)
+            {
+                response.set_status_code(http::http_status::BadRequest);
+                response.set_header("Content-Type", "application/json");
+                response.set_body(nlohmann::json{
+                    {"error", "Invalid product ID"}
+                });
+                return;
+            }
+
+            std::optional<products> product = pserv.get_by_id(product_id);
+
+            response.set_header("Content-Type", "application/json");
+
+            if (product.has_value())
+            {
+                response.set_status_code(http::http_status::Ok);
+                response.set_body(nlohmann::json{
+                    {"id", product->id},
+                    {"category_id", product->category_id},
+                    {"name", product->name},
+                    {"price", product->price},
+                    {"stock", product->stock}
+                });
+            }
+            else
+            {
+                response.set_status_code(http::http_status::NotFound);
+                response.set_body(nlohmann::json{
+                    {"error", "Product not found"},
+                    {"id", product_id}
+                });
+            }
         }
     );
     server.get("/greet/{}",
@@ -133,6 +188,44 @@ int32_t main()
             response.set_header("Content-Type", "application/json");
         }
     );
+    server.post("/api/products", [&db](
+        const http::request<nlohmann::json> &request, http::response_builder<nlohmann::json> &response
+    ) {
+        const auto &body = request.m_Body;
+
+        response.set_header("Content-Type", "application/json");
+
+        const auto validation = validate_product_schema(body);
+
+        if (!validation.ok())
+        {
+            response.set_status_code(http::http_status::BadRequest);
+            response.set_body(nlohmann::json{
+                {"error", "Validation failed"},
+                {"details", validation.to_json()}
+            });
+        }
+
+        try
+        {
+            db.insert<products>({
+                0, body.at("category_id").get<int32_t>(), body.at("name").get<std::string>(),
+                body.at("description").get<std::string>(), body.at("price").get<int32_t>(), body.at("stock").get<int32_t>()
+            });
+
+            response.set_status_code(http::http_status::Ok);
+            response.set_body(nlohmann::json::object({
+                {"status", 201},
+                {"details", "Product was successfully added."}
+            }));
+        } catch (const std::exception &e)
+        {
+            LOG_INFO(CONFIG_OPTS, std::format("Failed to validate and add the product: {}", e.what()));
+
+            response.set_status_code(http::http_status::InternalServerError);
+            response.set_body(nlohmann::json{"error", "Internal server error"});
+        }
+    });
     server.post("/jsond/{}",
         [](const http::request<nlohmann::json> &request, http::response_builder<nlohmann::json> &response, boost::smatch &_match)
         {

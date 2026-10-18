@@ -365,34 +365,6 @@ void sv::server::process_connection(std::shared_ptr<tcp::socket> socket)
 
             auto request = http::deserialize_request(header_part);
 
-            // If headers contain Content-Type: application/json, then set
-            // appropriate json method into request
-            auto cont_t = request.m_Headers.find("Content-Type");
-            if (cont_t != request.m_Headers.end() &&
-                cont_t->second.find("application/json") != std::string::npos)
-            {
-                switch (request.m_Method)
-                {
-                    case http::http_method::Get:
-                        request.m_Method = http::http_method::Json_Get;
-                        break;
-                    case http::http_method::Post:
-                        request.m_Method = http::http_method::Json_Post;
-                        break;
-                    case http::http_method::Put:
-                        request.m_Method = http::http_method::Json_Put;
-                        break;
-                    case http::http_method::Delete:
-                        request.m_Method = http::http_method::Json_Delete;
-                        break;
-                    case http::http_method::Head:
-                        request.m_Method = http::http_method::Json_Head;
-                        break;
-                    default:
-                        break;
-                }
-            }
-
             std::size_t content_length = 0;
             auto it = request.m_Headers.find("Content-Length");
             if (it != request.m_Headers.end())
@@ -478,15 +450,26 @@ void sv::server::process_connection(std::shared_ptr<tcp::socket> socket)
 
             next();
 
-            response.set_header("Connection", "keep-alive");
-            response.set_header("Content-Length", std::to_string(response.get_body().size()));
+            const bool is_json_handler = handler_pair.first == 2 || handler_pair.first == 3;
 
             std::string response_payload;
 
-            if (handler_pair.first == 2 || handler_pair.first == 3)
+            if (is_json_handler)
+            {
+                const std::string body = j_response.get_body().dump();
+
+                j_response.set_header("Content-Length", std::to_string(body.size()));
+                j_response.set_header("Connection", "keep-alive");
+
                 response_payload = serialize_response(j_response);
+            }
             else
+            {
+                response.set_header("Content-Length", std::to_string(response.get_body().size()));
+                response.set_header("Connection", "keep-alive");
+
                 response_payload = serialize_response(response);
+            }
 
             boost::asio::write(*socket, boost::asio::buffer(response_payload));
             if (ec)
@@ -546,33 +529,13 @@ boost::asio::awaitable<void> sv::server::process_connection_async(std::shared_pt
 
             auto request = http::deserialize_request(header_part);
 
-            // If headers contain Content-Type: application/json, then set
-            // appropriate json method into request
-            auto cont_t = request.m_Headers.find("Content-Type");
-            if (cont_t != request.m_Headers.end() &&
-                cont_t->second.find("application/json") != std::string::npos)
+            const auto parse_json_body = [](const std::string& body) -> json
             {
-                switch (request.m_Method)
-                {
-                    case http::http_method::Get:
-                        request.m_Method = http::http_method::Json_Get;
-                        break;
-                    case http::http_method::Post:
-                        request.m_Method = http::http_method::Json_Post;
-                        break;
-                    case http::http_method::Put:
-                        request.m_Method = http::http_method::Json_Put;
-                        break;
-                    case http::http_method::Delete:
-                        request.m_Method = http::http_method::Json_Delete;
-                        break;
-                    case http::http_method::Head:
-                        request.m_Method = http::http_method::Json_Head;
-                        break;
-                    default:
-                        break;
-                }
-            }
+                if (body.empty())
+                    return json::object();
+
+                return json::parse(body);
+            };
 
             std::size_t content_length = 0;
             auto it = request.m_Headers.find("Content-Length");
@@ -611,7 +574,7 @@ boost::asio::awaitable<void> sv::server::process_connection_async(std::shared_pt
                 {
                     auto h = std::get<rt::json_callback_handler>(handler_pair.second);
 
-                    auto j_body = json::parse(request.m_Body);
+                    auto j_body = parse_json_body(request.m_Body);
 
                     http::request<json> j_request{
                         request.m_Method,
@@ -628,7 +591,7 @@ boost::asio::awaitable<void> sv::server::process_connection_async(std::shared_pt
                 {
                     auto h = std::get<rt::json_dynamic_callback_handler>(handler_pair.second);
 
-                    auto j_body = json::parse(request.m_Body);
+                    auto j_body = parse_json_body(request.m_Body);
 
                     http::request<json> j_request{
                         request.m_Method,
@@ -660,15 +623,26 @@ boost::asio::awaitable<void> sv::server::process_connection_async(std::shared_pt
 
             next();
 
-            response.set_header("Connection", "keep-alive");
-            response.set_header("Content-Length", std::to_string(response.get_body().size()));
+            const bool is_json_handler = handler_pair.first == 2 || handler_pair.first == 3;
 
             std::string response_payload;
 
-            if (handler_pair.first == 2 || handler_pair.first == 3)
+            if (is_json_handler)
+            {
+                const std::string body = j_response.get_body().dump();
+
+                j_response.set_header("Content-Length", std::to_string(body.size()));
+                j_response.set_header("Connection", "keep-alive");
+
                 response_payload = serialize_response(j_response);
+            }
             else
+            {
+                response.set_header("Content-Length", std::to_string(response.get_body().size()));
+                response.set_header("Connection", "keep-alive");
+
                 response_payload = serialize_response(response);
+            }
 
             co_await boost::asio::async_write(*socket, boost::asio::buffer(response_payload), boost::asio::use_awaitable);
             if (ec)

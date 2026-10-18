@@ -48,7 +48,7 @@ public:
     template<typename T>
     void insert(const T &obj)
     {
-        orm::insert(m_Conn, obj);
+        orm::insert<T>(m_Conn, obj);
     }
 
     template<typename T>

@@ -42,6 +42,14 @@ struct json_dynamic_route
     json_dynamic_callback_handler handler;
 };
 
+using handler_return_t = std::pair<
+    int32_t,
+    std::variant<
+        rt::callback_handler, rt::dynamic_callback_handler,
+        rt::json_callback_handler, rt::json_dynamic_callback_handler
+    >
+>;
+
 class router
 {
 public:
@@ -53,11 +61,7 @@ public:
     void register_json_dynamic(const std::string &path, http::http_method method, json_dynamic_callback_handler &&handler);
     void set_404_handler(callback_handler &&callback);
     void set_405_handler(callback_handler &&callback);
-    std::pair<int32_t,
-    std::variant<
-    callback_handler, dynamic_callback_handler, json_callback_handler,
-    json_dynamic_callback_handler>>
-    get_handler(const std::string &path, http::http_method method, boost::smatch &out_match) const;
+    handler_return_t get_handler(const std::string &path, http::http_method method, boost::smatch &out_match) const;
     bool dispatch(const http::request<std::string> &req, http::response_builder<std::string> &res);
     ~router();
 private:

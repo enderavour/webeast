@@ -49,26 +49,31 @@ void logger::debug(std::string_view msg)
 void logger::info(std::ostream &out, std::string_view msg)
 {
     out << std::format("{} [INFO] {}", get_time(), msg) << std::endl;
+    out.flush();
 }
 
 void logger::warn(std::ostream &out, std::string_view msg)
 {
     out << std::format("{} [WARN] {}", get_time(), msg) << std::endl;
+    out.flush();
 }
 
 void logger::error(std::ostream &out, std::string_view msg)
 {
     out << std::format("{} [ERROR] {}", get_time(), msg) << std::endl;
+    out.flush();
 }
 
 void logger::trace(std::ostream &out, std::string_view msg)
 {
     out << std::format("{} [TRACE] {}", get_time(), msg) << std::endl;
+    out.flush();
 }
 
 void logger::debug(std::ostream &out, std::string_view msg)
 {
     out << std::format("{} [DEBUG] {}", get_time(), msg) << std::endl;
+    out.flush();
 }
 
 void logger::open_log_file(const std::filesystem::path &fname)
@@ -78,4 +83,5 @@ void logger::open_log_file(const std::filesystem::path &fname)
 
     if (!LOG_FILE_HANDLE.is_open())
         std::println("[ERROR] Error opening log file");
+
 }

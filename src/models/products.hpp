@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 #include "../include/orm/orm.hpp"
+#include "validation.hpp"
 
 struct products
 {
@@ -38,5 +39,7 @@ struct orm::orm_model<products> : orm::orm_model_base<products>
         )
     );
 };
+
+validation_result validate_product_schema(const json& body);
 
 #endif

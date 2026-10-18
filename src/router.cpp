@@ -1,9 +1,11 @@
 #include "include/router.hpp"
+#include "boost/regex/v5/regex_match.hpp"
 #include "include/http.hpp"
 #include "include/defaults.hpp"
 #include "include/logger.hpp"
 #include "include/config.hpp"
 #include <boost/algorithm/string/replace.hpp>
+#include <iostream>
 
 static conf::config_opts CONFIG_OPTS = defaults::CONFIG.get_config_opts();
 
@@ -100,71 +102,89 @@ bool rt::router::dispatch(const http::request<std::string> &req, http::response_
 }
 
 
-std::pair<int32_t,
-std::variant<rt::callback_handler, rt::dynamic_callback_handler,
-rt::json_callback_handler, rt::json_dynamic_callback_handler>>
-rt::router::get_handler(const std::string &path, http::http_method method, boost::smatch &out_match) const
+rt::handler_return_t rt::router::get_handler(
+    const std::string& path,
+    http::http_method method,
+    boost::smatch& out_match
+) const
 {
-    if ((int32_t)method >= 6)
+    const auto json_method = [&]() -> http::http_method
     {
-        for (const auto &jroute: m_JsonRoutes)
+        switch (method)
         {
-            if (jroute.path == path && jroute.method == method)
-                return {2, jroute.handler};
+            case http::http_method::Get:
+                return http::http_method::Json_Get;
+            case http::http_method::Post:
+                return http::http_method::Json_Post;
+            case http::http_method::Put:
+                return http::http_method::Json_Put;
+            case http::http_method::Delete:
+                return http::http_method::Json_Delete;
+            case http::http_method::Head:
+                return http::http_method::Json_Head;
+            default:
+                return http::http_method::Json_Unknown;
         }
+    }();
 
-        for (const auto &jdroute: m_JsonDynamicRoutes)
-        {
-            if (jdroute.method != method)
-            continue;
-
-            boost::smatch match;
-            if (boost::regex_match(path, match, jdroute.pattern))
-            {
-                out_match = match;
-                return {3, jdroute.handler};
-            }
-            out_match = match;
-        }
-
-        LOG_WARN(CONFIG_OPTS, std::format("Dispatch: The provided JSON path is not found: {}", path));
-
-        return {0, m_notFoundHandler};
-    }
-
+    // 1. Static regular routes
     auto callbacks_it = m_Callbacks.find(path);
+
     if (callbacks_it != m_Callbacks.end())
     {
-        const auto &method_map = callbacks_it->second;
-
+        const auto& method_map = callbacks_it->second;
         auto method_it = method_map.find(method);
+
         if (method_it != method_map.end())
             return {0, method_it->second};
-
-        LOG_WARN(CONFIG_OPTS, std::format(
-            "Dispatch: The provided path is not allowed at path: {}", path
-        ));
-
-        return {0, m_notAllowedHandler};
     }
 
-    for (const auto &route: m_DynamicRoutes)
+    // 2. Static JSON routes
+    for (const auto& route : m_JsonRoutes)
+    {
+        if (route.path == path && route.method == json_method)
+            return {2, route.handler};
+    }
+
+    // 3. Dynamic regular routes
+    for (const auto& route : m_DynamicRoutes)
     {
         if (route.method != method)
             continue;
 
         boost::smatch match;
+
         if (boost::regex_match(path, match, route.pattern))
         {
             out_match = match;
             return {1, route.handler};
         }
-        out_match = match;
     }
-    LOG_WARN(CONFIG_OPTS, std::format("Dispatch: The provided path is not found: {}", path));
+
+    // 4. Dynamic JSON routes
+    for (const auto& route : m_JsonDynamicRoutes)
+    {
+        if (route.method != json_method)
+            continue;
+
+        boost::smatch match;
+
+        if (boost::regex_match(path, match, route.pattern))
+        {
+            out_match = match;
+            return {3, route.handler};
+        }
+    }
+
+    // 5. No matching route
+    LOG_WARN(
+        CONFIG_OPTS,
+        std::format("Dispatch: The provided path is not found: {}", path)
+    );
 
     return {0, m_notFoundHandler};
 }
+
 
 rt::router::~router()
 {

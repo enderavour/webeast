@@ -13,6 +13,8 @@
 #include "timestamp.hpp"
 #include "model.hpp"
 #include "foreignkey.hpp"
+#include "../logger.hpp"
+#include "../defaults.hpp"
 
 namespace orm
 {
@@ -165,7 +167,14 @@ void insert(sqlite3 *db, const T &obj)
 
     bind_object(stmt, obj);
 
-    sqlite3_step(stmt);
+    if (sqlite3_step(stmt) != SQLITE_DONE)
+    {
+        const std::string error = sqlite3_errmsg(db);
+
+        conf::config_opts copts = defaults::CONFIG.get_config_opts();
+
+        LOG_ERROR(copts, std::format("Error inserting record to the database: {}", error));
+    }
 
     sqlite3_finalize(stmt);
 }
