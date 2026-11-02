@@ -25,7 +25,7 @@ public:
     {
         if (sqlite3_open(path.string().c_str(), &m_Conn) != SQLITE_OK)
         {
-            LOG_ERROR(get_config_opts(), std::format("Could not open connection to database: {}", sqlite3_errmsg(m_Conn)));
+            LOG_ERROR(std::format("Could not open connection to database: {}", sqlite3_errmsg(m_Conn)));
         }
 
         // Turn on foreign key check for every connection
@@ -69,9 +69,27 @@ public:
         return orm::select_where<T, Args...>(m_Conn, clause, std::forward<Args>(args)...);
     }
 
+    template<typename T, typename Field>
+    void update(const Field &field)
+    {
+        orm::update<T>(m_Conn, field);
+    }
+
+    template<typename T, typename Field, typename Condition>
+    void update(const Field &field, const Condition &condition)
+    {
+        orm::update<T>(m_Conn, field, condition);
+    }
+
+    template<typename T, typename Condition>
+    bool remove(const Condition &condition)
+    {
+        return orm::remove<T>(m_Conn, condition);
+    }
+
     ~database()
     {
-        LOG_INFO(get_config_opts(), "Closing database handle");
+        LOG_INFO("Closing database handle");
         sqlite3_close(m_Conn);
     }
 

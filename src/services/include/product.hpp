@@ -13,9 +13,14 @@ public:
     std::vector<products> get_all();
 
     std::optional<products> get_by_id(int32_t id);
+
+    void update(int32_t id, const products &product);
+
+    bool remove(int32_t id);
+
+    void create(const products &product);
 private:
     product_repository m_repository;
-    void create(const products &product);
 };
 
 #endif

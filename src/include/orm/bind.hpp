@@ -11,6 +11,7 @@
 #include "../defaults.hpp"
 #include "../logger.hpp"
 #include "timestamp.hpp"
+#include "condition.hpp"
 
 inline conf::config_opts &get_config_opts()
 {
@@ -22,51 +23,96 @@ namespace orm
 {
 
 template<typename T>
-void bind(sqlite3_stmt *stmt, int32_t index, const T &value)
+int32_t bind(sqlite3_stmt *stmt, int32_t index, const T &value)
 {
-    if constexpr (std::is_same_v<T, int32_t>)
+    using U = std::remove_cvref_t<T>;
+
+    if constexpr (std::is_same_v<U, int32_t>)
     {
-        sqlite3_bind_int(stmt, index, value);
+        return sqlite3_bind_int(stmt, index, value);
     }
-    else if constexpr (std::is_same_v<T, int64_t>)
+    else if constexpr (std::is_same_v<U, int64_t>)
     {
-        sqlite3_bind_int64(stmt, index, value);
+        return sqlite3_bind_int64(stmt, index, value);
     }
-    else if constexpr (std::is_same_v<T, double>)
+    else if constexpr (std::is_same_v<U, double>)
     {
-        sqlite3_bind_double(stmt, index, value);
+        return sqlite3_bind_double(stmt, index, value);
     }
-    else if constexpr (std::is_same_v<T, std::string>)
+    else if constexpr (std::is_same_v<U, float>)
     {
-        sqlite3_bind_text(stmt, index, value.c_str(), -1, SQLITE_TRANSIENT);
+        return sqlite3_bind_double(stmt, index, value);
+    }
+    else if constexpr (std::is_same_v<U, bool>)
+    {
+        return sqlite3_bind_int(stmt, index, value ? 1 : 0);
+    }
+    else if constexpr (std::is_same_v<U, std::string>)
+    {
+        return sqlite3_bind_text(stmt, index, value.c_str(), -1, SQLITE_TRANSIENT);
     }
     else
     {
-        LOG_ERROR(get_config_opts(), "Unsupported bind type");
+        LOG_ERROR("Unsupported bind type");
         static_assert(sizeof(T) == 0, "Unsupported bind type");
     }
+}
+
+template<typename Fields>
+int32_t bind_fields(sqlite3_stmt *stmt, const Fields &fields)
+{
+    int32_t index =  1;
+    int32_t rc = SQLITE_OK;
+
+    std::apply([&](const auto& ...elems) {
+        (
+            [&] {
+                if (rc != SQLITE_OK)
+                    return;
+
+                rc = orm::bind(stmt, index, elems.value);
+
+                if (rc == SQLITE_OK)
+                    index++;
+            }(),
+            ...
+        );
+    }, fields);
+
+    return rc;
+}
+
+template<typename T, typename Member, typename Value>
+int32_t bind_condition(
+    sqlite3_stmt *stmt,
+    const condition<T, Member, Value> &cond,
+    int32_t index
+) {
+    return orm::bind(stmt, index, cond.value);
 }
 
 template<typename T>
 constexpr const char *get_sqlite_type()
 {
+    using U = std::remove_cvref_t<T>;
+
     if constexpr (
-        std::is_same_v<T, int32_t> ||
-        std::is_same_v<T, int64_t> ||
-        std::is_same_v<T, bool> ||
-        std::is_same_v<T, std::chrono::time_point<std::chrono::system_clock>>
+        std::is_same_v<U, int32_t> ||
+        std::is_same_v<U, int64_t> ||
+        std::is_same_v<U, bool> ||
+        std::is_same_v<U, std::chrono::time_point<std::chrono::system_clock>>
     )
         return "INTEGER";
     else if constexpr (
-        std::is_same_v<T, double> || std::is_same_v<T, float>
+        std::is_same_v<U, double> || std::is_same_v<U, float>
     )
         return "REAL";
-    else if constexpr (std::is_same_v<T, std::string>)
+    else if constexpr (std::is_same_v<U, std::string>)
         return "TEXT";
     else
     {
-        LOG_ERROR(get_config_opts(), "Unsupported SQL type");
-        static_assert(sizeof(T) == 0, "Unsupported SQL type");
+        LOG_ERROR("Unsupported SQL type");
+        static_assert(!std::is_same_v<U, U>, "Unsupported SQL type");
     }
 }
 
@@ -82,11 +128,14 @@ void bind_object(sqlite3_stmt *stmt, const T &obj)
             {
                 if constexpr (!orm::is_timestamp_v<decltype(col)>)
                 {
-                    bind(
-                        stmt,
-                        index++,
-                        obj.*(col.member)
-                    );
+                    if (!(col.primary_key && col.autoincrement))
+                    {
+                        bind(
+                            stmt,
+                            index++,
+                            obj.*(col.member)
+                        );
+                    }
                 }
             }(), ...
         );

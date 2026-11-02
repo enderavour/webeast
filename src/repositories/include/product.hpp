@@ -9,9 +9,13 @@ class product_repository
 public:
     explicit product_repository(orm::database &db);
 
-    std::vector<products> get_all();
+    std::vector<products> select_all();
 
-    std::optional<products> get_by_id(int32_t id);
+    std::optional<products> select_by_id(int32_t id);
+
+    bool remove(int32_t id);
+
+    void update(int32_t id, const products &product);
 
     void create(const products &product);
 private:

@@ -19,7 +19,7 @@ sv::server::server(const std::string &addr, int32_t port):
 m_Addr(addr), m_Port(port), m_AsioCTX(1), m_Acceptor(m_AsioCTX, tcp::endpoint(
     make_address(addr), port)), m_Pool(CONFIG_OPTS.clients_capacity)
 {
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Created server with at address {} and port {}. Max connections: {}",
         addr, port, CONFIG_OPTS.clients_capacity
     ));
@@ -29,7 +29,7 @@ sv::server::server(const std::string &addr, int32_t port, rt::router router):
 m_Router(router), m_Addr(addr), m_Port(port), m_Acceptor(m_AsioCTX, tcp::endpoint(
     make_address(addr), port)), m_Pool(CONFIG_OPTS.clients_capacity)
 {
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Created server with at address {} and port {}. Max connections: {}",
         addr, port, CONFIG_OPTS.clients_capacity
     ));
@@ -48,7 +48,7 @@ void sv::server::get(const std::string &path, rt::callback_handler &&handler)
         std::forward<rt::callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering GET request at path: {}", path
     ));
 }
@@ -59,7 +59,7 @@ void sv::server::post(const std::string &path, rt::callback_handler &&handler)
         path, http::http_method::Post,
         std::forward<rt::callback_handler>(handler)
     );
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering POST request at path: {}", path
     ));
 }
@@ -71,7 +71,7 @@ void sv::server::put(const std::string &path, rt::callback_handler &&handler)
         std::forward<rt::callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering PUT request at path: {}", path
     ));
 }
@@ -83,7 +83,7 @@ void sv::server::_delete(const std::string &path, rt::callback_handler &&handler
         std::forward<rt::callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering DELETE request at path: {}", path
     ));
 }
@@ -95,7 +95,7 @@ void sv::server::head(const std::string &path, rt::callback_handler &&handler)
         std::forward<rt::callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering HEAD request at path: {}", path
     ));
 }
@@ -109,7 +109,7 @@ void sv::server::get(const std::string &path, rt::dynamic_callback_handler &&han
         std::forward<rt::dynamic_callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering dynamic GET request at path: {}", path
     ));
 }
@@ -121,7 +121,7 @@ void sv::server::post(const std::string &path, rt::dynamic_callback_handler &&ha
         std::forward<rt::dynamic_callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering dynamic POST request at path: {}", path
     ));
 }
@@ -133,7 +133,7 @@ void sv::server::put(const std::string &path, rt::dynamic_callback_handler &&han
         std::forward<rt::dynamic_callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering dynamic PUT request at path: {}", path
     ));
 }
@@ -145,7 +145,7 @@ void sv::server::_delete(const std::string &path, rt::dynamic_callback_handler &
         std::forward<rt::dynamic_callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering dynamic DELETE request at path: {}", path
     ));
 }
@@ -157,7 +157,7 @@ void sv::server::head(const std::string &path, rt::dynamic_callback_handler &&ha
         std::forward<rt::dynamic_callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering dynamic HEAD request at path: {}", path
     ));
 }
@@ -171,7 +171,7 @@ void sv::server::get(const std::string &path, rt::json_callback_handler &&handle
         std::forward<rt::json_callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering JSON GET request at path: {}", path
     ));
 }
@@ -183,7 +183,7 @@ void sv::server::post(const std::string &path, rt::json_callback_handler &&handl
         std::forward<rt::json_callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering JSON POST request at path: {}", path
     ));
 }
@@ -195,7 +195,7 @@ void sv::server::put(const std::string &path, rt::json_callback_handler &&handle
         std::forward<rt::json_callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering JSON PUT request at path: {}", path
     ));
 }
@@ -207,7 +207,7 @@ void sv::server::_delete(const std::string &path, rt::json_callback_handler &&ha
         std::forward<rt::json_callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering JSON DELETE request at path: {}", path
     ));
 }
@@ -219,7 +219,7 @@ void sv::server::head(const std::string &path, rt::json_callback_handler &&handl
         std::forward<rt::json_callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering JSON HEAD request at path: {}", path
     ));
 }
@@ -232,7 +232,7 @@ void sv::server::get(const std::string &path, rt::json_dynamic_callback_handler 
         std::forward<rt::json_dynamic_callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering JSON Dynamic GET request at path: {}", path
     ));
 }
@@ -244,7 +244,7 @@ void sv::server::post(const std::string &path, rt::json_dynamic_callback_handler
         std::forward<rt::json_dynamic_callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering JSON Dynamic POST request at path: {}", path
     ));
 }
@@ -256,7 +256,7 @@ void sv::server::put(const std::string &path, rt::json_dynamic_callback_handler 
         std::forward<rt::json_dynamic_callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering JSON Dynamic PUT request at path: {}", path
     ));
 }
@@ -268,7 +268,7 @@ void sv::server::_delete(const std::string &path, rt::json_dynamic_callback_hand
         std::forward<rt::json_dynamic_callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering JSON Dynamic DELETE request at path: {}", path
     ));
 }
@@ -280,7 +280,7 @@ void sv::server::head(const std::string &path, rt::json_dynamic_callback_handler
         std::forward<rt::json_dynamic_callback_handler>(handler)
     );
 
-    LOG_INFO(CONFIG_OPTS, std::format(
+    LOG_INFO(std::format(
         "Registering JSON Dynamic HEAD request at path: {}", path
     ));
 }
@@ -292,18 +292,18 @@ void sv::server::run_sync()
         auto socket = std::make_shared<tcp::socket>(m_AsioCTX);
         m_Acceptor.accept(*socket);
 
-        LOG_INFO(CONFIG_OPTS, "Accepted new client");
+        LOG_INFO("Accepted new client");
 
         if (m_Pool.active_tasks_count() + 1 >= defaults::CLIENTS_MAX_CAPACITY)
         {
-            LOG_ERROR(CONFIG_OPTS, "Thread pool capacity exceded. Closing connection.");
+            LOG_ERROR("Thread pool capacity exceded. Closing connection.");
             socket->close();
         }
 
         m_Pool.add_task([this, socket = std::move(socket)]() {
             process_connection(std::move(socket));
         });
-        LOG_INFO(CONFIG_OPTS, "Adding processing task to thread pool");
+        LOG_INFO("Adding processing task to thread pool");
     }
 }
 
@@ -315,16 +315,16 @@ boost::asio::awaitable<void> sv::server::run_async()
         try
         {
             auto socket = std::make_shared<tcp::socket>(co_await m_Acceptor.async_accept(executor));
-            LOG_INFO(CONFIG_OPTS, "Accepted new client");
+            LOG_INFO("Accepted new client");
             boost::asio::co_spawn(executor, [this, sock = std::move(socket)]() mutable -> boost::asio::awaitable<void>
             {
                 co_await process_connection_async(sock);
             }, boost::asio::detached);
-            LOG_INFO(CONFIG_OPTS, "Started coroutine of processing task");
+            LOG_INFO("Started coroutine of processing task");
         }
         catch (const std::exception &e)
         {
-            LOG_INFO(CONFIG_OPTS, std::format("Async accept error: {}", e.what()));
+            LOG_INFO(std::format("Async accept error: {}", e.what()));
         }
     }
 }
@@ -343,7 +343,11 @@ void sv::server::process_connection(std::shared_ptr<tcp::socket> socket)
             boost::asio::read_until(*socket, buffer, "\r\n\r\n", ec);
 
             if (ec == boost::asio::error::eof)
-                break;
+            {
+                LOG_INFO("Other host closed the connection, gracefully finishing the program...");
+                socket->close();
+                return;
+            }
 
             if (ec)
                 throw boost::system::system_error(ec);
@@ -356,7 +360,7 @@ void sv::server::process_connection(std::shared_ptr<tcp::socket> socket)
             auto pos = data.find("\r\n\r\n");
             if (pos == std::string::npos)
             {
-                LOG_ERROR(CONFIG_OPTS, "Could not parse invalid HTTP request.");
+                LOG_ERROR("Could not parse invalid HTTP request.");
                 throw std::runtime_error("Invalid HTTP request");
             }
 
@@ -475,10 +479,10 @@ void sv::server::process_connection(std::shared_ptr<tcp::socket> socket)
             if (ec)
             {
                 if (ec == boost::asio::error::connection_reset)
-                    LOG_INFO(CONFIG_OPTS, "Client resetted the connection");
+                    LOG_INFO("Client resetted the connection");
                 else
                 {
-                    LOG_ERROR(CONFIG_OPTS, std::format(
+                    LOG_ERROR(std::format(
                         "Connection error occured: {}", ec.what()
                     ));
                 }
@@ -487,7 +491,7 @@ void sv::server::process_connection(std::shared_ptr<tcp::socket> socket)
             auto it_conn = request.m_Headers.find("Connection");
             if (it_conn != request.m_Headers.end() && it_conn->second == "close")
             {
-                LOG_INFO(CONFIG_OPTS, "Client closed the connection");
+                LOG_INFO("Client closed the connection");
                 break;
             }
         }
@@ -495,7 +499,7 @@ void sv::server::process_connection(std::shared_ptr<tcp::socket> socket)
     }
     catch (const std::exception &e)
     {
-        LOG_INFO(CONFIG_OPTS, std::format("Error occured: {}", e.what()));
+        LOG_INFO(std::format("Error occured: {}", e.what()));
     }
 }
 
@@ -509,6 +513,9 @@ boost::asio::awaitable<void> sv::server::process_connection_async(std::shared_pt
         boost::asio::streambuf buffer;
         while (true)
         {
+            response.reset();
+            j_response.reset();
+
             boost::system::error_code ec;
             size_t n = co_await boost::asio::async_read_until(*socket, buffer, "\r\n\r\n", boost::asio::use_awaitable);
 
@@ -520,7 +527,7 @@ boost::asio::awaitable<void> sv::server::process_connection_async(std::shared_pt
             auto pos = data.find("\r\n\r\n");
             if (pos == std::string::npos)
             {
-                LOG_ERROR(CONFIG_OPTS, "Could not parse invalid HTTP request.");
+                LOG_ERROR("Could not parse invalid HTTP request.");
                 throw std::runtime_error("Invalid HTTP request");
             }
 
@@ -649,11 +656,11 @@ boost::asio::awaitable<void> sv::server::process_connection_async(std::shared_pt
             {
                 if (ec == boost::asio::error::connection_reset)
                 {
-                    LOG_INFO(CONFIG_OPTS, "Client resetted the connection");
+                    LOG_INFO("Client resetted the connection");
                 }
                 else
                 {
-                    LOG_ERROR(CONFIG_OPTS, std::format(
+                    LOG_ERROR(std::format(
                         "Connection error occured: {}", ec.what()
                     ));
                 }
@@ -662,7 +669,7 @@ boost::asio::awaitable<void> sv::server::process_connection_async(std::shared_pt
             auto it_conn = request.m_Headers.find("Connection");
             if (it_conn != request.m_Headers.end() && it_conn->second == "close")
             {
-                LOG_INFO(CONFIG_OPTS, "Client closed the connection");
+                LOG_INFO("Client closed the connection");
                 break;
             }
         }
@@ -670,13 +677,13 @@ boost::asio::awaitable<void> sv::server::process_connection_async(std::shared_pt
     }
     catch (const std::exception &e)
     {
-        LOG_ERROR(CONFIG_OPTS, std::format("Error occured: {}", e.what()));
+        LOG_ERROR(std::format("Error occured: {}", e.what()));
     }
 }
 
 void sv::server::start()
 {
-    LOG_INFO(CONFIG_OPTS, "Server is running at 127.0.0.1:8080");
+    LOG_INFO("Server is running at 127.0.0.1:8080");
 
     if (CONFIG_OPTS.server == conf::server_type::Sync)
     {
@@ -700,5 +707,5 @@ void sv::server::use(middleware_t &&mw)
 
 sv::server::~server()
 {
-    LOG_INFO(CONFIG_OPTS, "Terminating Server");
+    LOG_INFO("Terminating Server");
 }

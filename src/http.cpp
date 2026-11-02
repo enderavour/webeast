@@ -63,6 +63,16 @@ std::map<std::string, std::string> http::response_builder<T>::get_headers() cons
     return m_Headers;
 }
 
+template<class T>
+requires std::is_convertible_v<T, std::string> ||
+std::is_same_v<std::decay_t<T>, nlohmann::json>
+void http::response_builder<T>::reset()
+{
+    m_StatusCode = http::http_status::Ok;
+    m_Body = body_type{};
+    m_Headers.clear();
+}
+
 
 template<class T>
 requires std::is_convertible_v<T, std::string> ||

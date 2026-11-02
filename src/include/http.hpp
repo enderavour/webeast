@@ -74,6 +74,7 @@ public:
     std::map<std::string, std::string> get_headers() const;
     body_type get_body() const;
 
+    void reset();
 private:
     http_status m_StatusCode;
     body_type m_Body;

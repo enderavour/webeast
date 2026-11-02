@@ -8,7 +8,7 @@
 - As well it is is built and tested using MSVC on Windows 10.
 - Added thread pool support (25 clients maximum)
 - Added static file serving, static HTML pages
-- Added PUT, DELETE requests
+- Added PUT, requests
 - Added keep-alive support 
 - Added support of dynamic path arguments
 - Added logging. Implemented writing either to stdout or to log file by defining corresponding macros: LOGGING_ENABLED_STDOUT or LOGGING_ENABLED_FILE
@@ -29,7 +29,7 @@
 - Fixed logging 
 - Added schema validation 
 - Implemented POST webpoints 
-* Testing POST webpoints 
+- Implemented and tested all HTTP endpoints for products and categories models 
 
 ### TODO
 - Cleanup the code

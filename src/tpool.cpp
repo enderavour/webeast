@@ -28,7 +28,7 @@ tpool::thread_pool::thread_pool(int32_t worker_capacity)
         }
     });
 
-    LOG_INFO(CONFIG_OPTS, std::format("Initialized Thread Pool with {} client capacity", worker_capacity));
+    LOG_INFO(std::format("Initialized Thread Pool with {} client capacity", worker_capacity));
 }
 
 tpool::thread_pool::~thread_pool()
@@ -43,7 +43,7 @@ tpool::thread_pool::~thread_pool()
     for (auto &thread: m_Workers)
         thread.join();
 
-    LOG_INFO(CONFIG_OPTS, "Thread Pool deinitialized");
+    LOG_INFO("Thread Pool deinitialized");
 }
 
 void tpool::thread_pool::add_task(std::function<void()> task)

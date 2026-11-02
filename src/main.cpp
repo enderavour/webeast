@@ -8,10 +8,15 @@
 #include "include/orm/orm.hpp"
 #include "models/create.hpp"
 #include "models/products.hpp"
+#include "models/categories.hpp"
 #include "services/include/product.hpp"
+#include "services/include/categories.hpp"
+#include "mocks/categories.hpp"
+#include <atomic>
 #include <format>
 
 #include <chrono>
+#include <string>
 
 static conf::config_opts CONFIG_OPTS = defaults::CONFIG.get_config_opts();
 
@@ -23,12 +28,16 @@ int32_t main()
     orm::database db(defaults::DB_PATH);
     models::create_all_tables(db);
 
-    product_service pserv(db);
+    product_service prod_service(db);
+    category_service categ_service(db);
+
+    for (const categories &category: generate_mock_categories())
+        categ_service.create(category);
 
     rt::router router;
     server.include_router(router);
 
-    // Middleware
+    // Timing Middleware
     server.use([](auto &req, auto &res, auto next)
     {
         auto t1 = std::chrono::high_resolution_clock::now();
@@ -37,55 +46,19 @@ int32_t main()
 
         auto ms = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count();
 
-        LOG_INFO(CONFIG_OPTS, std::format("Time elapsed for request: {} us", ms));
+        LOG_INFO( std::format("Time elapsed for request: {} us", ms));
     });
 
-    //server.get("/", static_file(static_dir, "index.html"));
-    //server.get("/pic", static_file(static_dir, "pic.html"));
-    server.put("/", [](const http::request<std::string> &request, http::response_builder<std::string> &response) {
-        LOG_INFO(CONFIG_OPTS, std::format("Body response: {}", request.m_Body));
-
-        response.set_status_code(http::http_status::Ok);
-        response.set_body(request.m_Body);
-        response.set_header("Content-Type", "text/plain");
-    });
-    //server.get("/form", static_file(static_dir, "form.html"));
-    /*server.get("/api/products/{}",
-        [&pserv](
-            const http::request<nlohmann::json> &request,
-            http::response_builder<nlohmann::json> &response,
-            boost::smatch &match
-        ) {
-            auto id = std::stoi(dynamic_get_match(match, 1));
-
-            auto product = pserv.get_by_id(id);
-
-            if (!product)
-            {
-                response.set_status_code(http::http_status::NotFound);
-                return;
-            }
-
-            response.set_status_code(http::http_status::Ok);
-            response.set_body({
-                {"id", product->id},
-                {"category_id", product->category_id},
-                {"name", product->name},
-                {"price", product->price},
-                {"stock", product->stock}
-            });
-            response.set_header("Content-Type", "application/json");
-        }
-        ); */
+    // Products
     server.get("/api/products",
-        [&pserv](
+        [&prod_service](
             const http::request<nlohmann::json>& request,
             http::response_builder<nlohmann::json>& response
         )
         {
-            LOG_INFO(CONFIG_OPTS, "Entered /api/products handler");
+            LOG_INFO("Entered /api/products handler");
 
-            auto products = pserv.get_all();
+            auto products = prod_service.get_all();
 
             nlohmann::json result = nlohmann::json::array();
 
@@ -106,12 +79,59 @@ int32_t main()
             response.set_header("Content-Type", "application/json");
         }
     );
+    server._delete("/api/products/{}", [&prod_service](
+        const http::request<nlohmann::json>& request,
+        http::response_builder<nlohmann::json>& response,
+        boost::smatch& _match
+    )
+    {
+        const std::string id_str = dynamic_get_match(_match, 1);
+        int32_t id;
 
+        try
+        {
+            size_t pos = 0;
+            id = std::stoi(id_str, &pos);
+
+            if (pos != id_str.size() || id <= 0)
+            {
+                throw std::invalid_argument("Invalid product ID");
+            }
+        }
+        catch (const std::exception&)
+        {
+            response.set_status_code(http::http_status::BadRequest);
+            response.set_header("Content-Type", "application/json");
+            response.set_body(nlohmann::json{
+                {"status", "error"},
+                {"message", "Invalid product ID"}
+            });
+            return;
+        }
+
+        if (!prod_service.remove(id))
+        {
+            response.set_status_code(http::http_status::InternalServerError);
+            response.set_header("Content-Type", "application/json");
+            response.set_body(nlohmann::json{
+                {"status", "error"},
+                {"message", "Could not remove the product"}
+            });
+            return;
+        }
+
+        response.set_status_code(http::http_status::Ok);
+        response.set_header("Content-Type", "application/json");
+        response.set_body(nlohmann::json{
+            {"status", "ok"},
+            {"message", "Product was successfully deleted."}
+        });
+    });
     server.get("/api/products/{}",
-        [&pserv](
+        [&prod_service](
             const http::request<nlohmann::json>& request,
             http::response_builder<nlohmann::json>& response,
-            boost::smatch _match
+            boost::smatch &_match
         )
         {
             int32_t product_id = 0;
@@ -136,7 +156,7 @@ int32_t main()
                 return;
             }
 
-            std::optional<products> product = pserv.get_by_id(product_id);
+            std::optional<products> product = prod_service.get_by_id(product_id);
 
             response.set_header("Content-Type", "application/json");
 
@@ -161,31 +181,67 @@ int32_t main()
             }
         }
     );
-    server.get("/greet/{}",
-        [](const http::request<std::string> &request, http::response_builder<std::string> &response, boost::smatch &_match)
+    server.put("/api/products/{}",
+        [&prod_service](
+            const http::request<nlohmann::json>& request,
+            http::response_builder<nlohmann::json>& response,
+            boost::smatch& _match
+        )
         {
-            auto matched = dynamic_get_match(_match, 1);
+            int32_t product_id = 0;
 
-            response.set_status_code(http::http_status::Ok);
-            response.set_body(std::format("<h1>Hello, {}!</h1>", matched));
-            response.set_header("Content-Type", "text/html");
-        }
-    );
-    server.post("/jsonp",
-        [](const http::request<nlohmann::json> &request, http::response_builder<nlohmann::json> &response)
-        {
-            LOG_INFO(CONFIG_OPTS, std::format("Received JSON from server: {}", request.m_Body.dump()));
-            auto json_obj = nlohmann::json::object({
-                {"status", 200},
-                {"response", "Ok!"}
-            });
+            try
+            {
+                const auto id_str = dynamic_get_match(_match, 1);
+                size_t pos = 0;
 
-            response.set_status_code(http::http_status::Ok);
-            response.set_body(json_obj);
-            response.set_header("Content-Length", std::to_string(
-               json_obj.dump().size()
-            ));
-            response.set_header("Content-Type", "application/json");
+                product_id = std::stoi(id_str, &pos);
+
+                if (pos != id_str.size() || product_id <= 0)
+                    throw std::invalid_argument("Invalid product ID");
+            }
+            catch (const std::exception&)
+            {
+                response.set_status_code(http::http_status::BadRequest);
+                response.set_header("Content-Type", "application/json");
+                response.set_body(nlohmann::json{
+                    {"status", "error"},
+                    {"message", "Invalid product ID"}
+                });
+                return;
+            }
+
+            try
+            {
+                const auto& body = request.m_Body;
+
+                products updated_product{
+                    product_id,
+                    body.at("category_id").get<int32_t>(),
+                    body.at("name").get<std::string>(),
+                    body.at("description").get<std::string>(),
+                    body.at("price").get<int32_t>(),
+                    body.at("stock").get<int32_t>()
+                };
+
+                prod_service.update(product_id, updated_product);
+
+                response.set_status_code(http::http_status::Ok);
+                response.set_header("Content-Type", "application/json");
+                response.set_body(nlohmann::json{
+                    {"status", "ok"},
+                    {"message", "Product was successfully updated."}
+                });
+            }
+            catch (const nlohmann::json::exception&)
+            {
+                response.set_status_code(http::http_status::BadRequest);
+                response.set_header("Content-Type", "application/json");
+                response.set_body(nlohmann::json{
+                    {"status", "error"},
+                    {"message", "Invalid product data"}
+                });
+            }
         }
     );
     server.post("/api/products", [&db](
@@ -220,12 +276,211 @@ int32_t main()
             }));
         } catch (const std::exception &e)
         {
-            LOG_INFO(CONFIG_OPTS, std::format("Failed to validate and add the product: {}", e.what()));
+            LOG_INFO(std::format("Failed to validate and add the product: {}", e.what()));
 
             response.set_status_code(http::http_status::InternalServerError);
             response.set_body(nlohmann::json{"error", "Internal server error"});
         }
     });
+    // -------------------------------
+
+    // Categories
+    server.get("/api/categories", [&categ_service](
+        const http::request<nlohmann::json> &request,
+        http::response_builder<nlohmann::json> &response
+    )
+    {
+        auto categories = categ_service.get_all();
+
+        nlohmann::json resulting_array = nlohmann::json::array();
+
+        for (const auto &category: categories)
+            resulting_array.push_back({
+                {"id", category.id},
+                {"name", category.name},
+                {"description", category.description}
+            });
+
+        response.set_status_code(http::http_status::Ok);
+        response.set_body(resulting_array);
+        response.set_header("Content-Type", "application/json");
+    });
+    server.get("/api/categories/{}", [&categ_service](
+        const http::request<nlohmann::json> &request,
+        http::response_builder<nlohmann::json> &response,
+        boost::smatch &_smatch
+    )
+    {
+        auto categoryid_str = dynamic_get_match(_smatch, 1);
+        int32_t category_id;
+        category_id = std::stoi(categoryid_str, nullptr);
+
+        auto selected_category = categ_service.get_by_id(category_id);
+
+        if (!selected_category)
+        {
+            response.set_status_code(http::http_status::NotFound);
+            response.set_header("Content-Type", "application/json");
+            response.set_body(nlohmann::json{
+                {"status", "error"},
+                {"message", "Could not find the category with provided ID."}
+            });
+            return;
+        }
+
+        response.set_status_code(http::http_status::Ok);
+        response.set_header("Content-Type", "application/json");
+        response.set_body(nlohmann::json{
+            {"id", selected_category->id},
+            {"name", selected_category->name},
+            {"description", selected_category->description}
+        });
+    });
+    server.post("/api/categories",
+        [&categ_service](
+            const http::request<nlohmann::json> &request,
+            http::response_builder<nlohmann::json> &response
+        )
+        {
+            try
+            {
+                auto body = request.m_Body;
+
+                categories category{};
+
+                category.description = body.at("name").get<std::string>();
+                category.name = body.at("description").get<std::string>();
+
+                categ_service.create(category);
+
+                response.set_status_code(http::http_status::Ok);
+                response.set_header("Content-Type", "application/json");
+                response.set_body(nlohmann::json{
+                    {"status", "ok"},
+                    {"message", "Category created successfully"}
+                });
+            } catch (const nlohmann::json::exception &e)
+            {
+                response.set_status_code(http::http_status::BadRequest);
+                response.set_header("Content-Type", "application/json");
+                response.set_body(nlohmann::json{
+                    {"status", "error"},
+                    {"message", "Invalid category data"}
+                });
+            }
+        }
+    );
+
+    server._delete("/api/categories/{}", [&categ_service](
+       const http::request<nlohmann::json> &request,
+       http::response_builder<nlohmann::json> &response,
+       boost::smatch &_match
+    ){
+
+        const std::string id_str = dynamic_get_match(_match, 1);
+        int32_t id;
+
+        try
+        {
+            size_t pos = 0;
+            id = std::stoi(id_str, &pos);
+            if (pos != id_str.size() || id <= 0)
+                throw std::invalid_argument("Invalid category id");
+
+        } catch (const std::exception &e)
+        {
+            response.set_status_code(http::http_status::BadRequest);
+            response.set_header("Content-Type", "application/json");
+            response.set_body(nlohmann::json{
+                {"status", "error"},
+                {"message", "Invalid category ID"}
+            });
+            return;
+        }
+
+        if (!categ_service.remove(id))
+        {
+            response.set_status_code(http::http_status::InternalServerError);
+            response.set_header("Content-Type", "application/json");
+            response.set_body(nlohmann::json{
+                {"status", "error"},
+                {"message", "Could not remove the category"}
+            });
+            return;
+        }
+
+        response.set_status_code(http::http_status::Ok);
+        response.set_header("Content-Type", "application/json");
+        response.set_body(nlohmann::json{
+            {"status", "ok"},
+            {"message", "Category was successfully removed."}
+        });
+        return;
+    });
+    server.put("/api/categories/{}", [&categ_service](
+       const http::request<nlohmann::json> &request,
+       http::response_builder<nlohmann::json> &response,
+       boost::smatch &_match
+    ){
+
+        try
+        {
+            auto json_content = request.m_Body;
+
+            int32_t id = std::stoi(dynamic_get_match(_match, 1));
+
+            categories category{};
+
+            category.name = json_content["name"].get<std::string>();
+            category.description = json_content["description"].get<std::string>();
+
+            categ_service.update(id, category);
+
+            response.set_status_code(http::http_status::Ok);
+            response.set_header("Content-Type", "application/json");
+            response.set_body(nlohmann::json{
+                {"status", "ok"},
+                {"message", "Category was successfully updated."}
+            });
+        } catch (const std::exception &e)
+        {
+            response.set_status_code(http::http_status::BadRequest);
+            response.set_body(nlohmann::json{
+                {"status", "error"},
+                {"message", e.what()}
+            });
+        }
+    });
+
+    server.get("/greet/{}",
+        [](const http::request<std::string> &request, http::response_builder<std::string> &response, boost::smatch &_match)
+        {
+            auto matched = dynamic_get_match(_match, 1);
+
+            response.set_status_code(http::http_status::Ok);
+            response.set_body(std::format("<h1>Hello, {}!</h1>", matched));
+            response.set_header("Content-Type", "text/html");
+        }
+    );
+    server.post("/jsonp",
+        [](const http::request<nlohmann::json> &request, http::response_builder<nlohmann::json> &response)
+        {
+            LOG_INFO(std::format("Received JSON from server: {}", request.m_Body.dump()));
+            auto json_obj = nlohmann::json::object({
+                {"status", 200},
+                {"response", "Ok!"}
+            });
+
+            response.set_status_code(http::http_status::Ok);
+            response.set_body(json_obj);
+            response.set_header("Content-Length", std::to_string(
+               json_obj.dump().size()
+            ));
+            response.set_header("Content-Type", "application/json");
+        }
+    );
+
+    // Misc
     server.post("/jsond/{}",
         [](const http::request<nlohmann::json> &request, http::response_builder<nlohmann::json> &response, boost::smatch &_match)
         {
@@ -236,7 +491,7 @@ int32_t main()
                 {"response", json_matched}
             });
 
-            LOG_INFO(CONFIG_OPTS, std::format("JSON Object: {}", json_obj.dump()));
+            LOG_INFO(std::format("JSON Object: {}", json_obj.dump()));
 
             response.set_status_code(http::http_status::Ok);
             response.set_body(json_obj);

@@ -18,7 +18,7 @@ struct orm::orm_model<categories> : orm::orm_model_base<categories>
     static constexpr const char *table = "categories";
 
     static inline auto columns = std::make_tuple(
-        orm::column("id", &categories::id, orm::primary_key),
+        orm::column("id", &categories::id, orm::primary_key, orm::autoincrement),
         orm::column("name", &categories::name),
         orm::column("description", &categories::description)
     );

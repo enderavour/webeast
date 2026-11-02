@@ -5,12 +5,22 @@ product_service::product_service(orm::database &db): m_repository(db) {}
 
 std::vector<products> product_service::get_all()
 {
-    return m_repository.get_all();
+    return m_repository.select_all();
 }
 
 std::optional<products> product_service::get_by_id(int32_t id)
 {
-    return m_repository.get_by_id(id);
+    return m_repository.select_by_id(id);
+}
+
+void product_service::update(int32_t id, const products &product)
+{
+    m_repository.update(id, product);
+}
+
+bool product_service::remove(int32_t id)
+{
+    return m_repository.remove(id);
 }
 
 validation_result validate_product_schema(const json& body)

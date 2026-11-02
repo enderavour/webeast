@@ -11,7 +11,7 @@ static conf::config_opts CONFIG_OPTS = defaults::CONFIG.get_config_opts();
 
 rt::router::router()
 {
-    LOG_INFO(CONFIG_OPTS, "Created Router, filled with default 404/405 callbacks");
+    LOG_INFO("Created Router, filled with default 404/405 callbacks");
     m_notFoundHandler = defaults::default_404_handler;
     m_notAllowedHandler = defaults::default_405_handler;
 }
@@ -19,7 +19,7 @@ rt::router::router()
 void rt::router::register_handler(const std::string &path, http::http_method method, rt::callback_handler &&callback)
 {
     m_Callbacks[path][method] = std::move(callback);
-    LOG_INFO(CONFIG_OPTS, std::format("Added callback handler at path {}", path));
+    LOG_INFO(std::format("Added callback handler at path {}", path));
 }
 
 void rt::router::remove_handler(const std::string &path, http::http_method method)
@@ -27,7 +27,7 @@ void rt::router::remove_handler(const std::string &path, http::http_method metho
     auto entry = m_Callbacks.find(path);
     if (entry == m_Callbacks.end())
     {
-        LOG_ERROR(CONFIG_OPTS, std::format("Could not find any callback handler at path {}", path));
+        LOG_ERROR(std::format("Could not find any callback handler at path {}", path));
         return;
     }
     auto &method_map = entry->second;
@@ -36,7 +36,7 @@ void rt::router::remove_handler(const std::string &path, http::http_method metho
     if (method_map.empty())
         m_Callbacks.erase(entry);
 
-    LOG_INFO(CONFIG_OPTS, std::format("Removed handler at path {}", path));
+    LOG_INFO(std::format("Removed handler at path {}", path));
  }
 
 void rt::router::register_dynamic(const std::string &path, http::http_method method, rt::dynamic_callback_handler &&callback)
@@ -46,14 +46,14 @@ void rt::router::register_dynamic(const std::string &path, http::http_method met
     boost::replace_all(regex_path, "}", ")");
     regex_path = "^" + regex_path + "$";
     m_DynamicRoutes.emplace_back(boost::regex(regex_path), method, callback);
-    LOG_INFO(CONFIG_OPTS, std::format("Registered dynamic method at {}", path));
+    LOG_INFO(std::format("Registered dynamic method at {}", path));
 }
 
 void rt::router::register_json(const std::string &path, http::http_method method, rt::json_callback_handler &&handler)
 {
     m_JsonRoutes.emplace_back(path, method, handler);
 
-    LOG_INFO(CONFIG_OPTS, std::format("Registered method with JSON handler at {}", path));
+    LOG_INFO(std::format("Registered method with JSON handler at {}", path));
 }
 
 void rt::router::register_json_dynamic(const std::string &path, http::http_method method, rt::json_dynamic_callback_handler &&handler)
@@ -81,7 +81,7 @@ bool rt::router::dispatch(const http::request<std::string> &req, http::response_
     auto path_it = m_Callbacks.find(req.m_Path);
     if (path_it == m_Callbacks.end())
     {
-        LOG_WARN(CONFIG_OPTS, std::format("Dispatch: The provided path is not found: {}", req.m_Path));
+        LOG_WARN( std::format("Dispatch: The provided path is not found: {}", req.m_Path));
         m_notFoundHandler(req, res);
         res.set_status_code(http::http_status::NotFound);
         return false;
@@ -91,7 +91,7 @@ bool rt::router::dispatch(const http::request<std::string> &req, http::response_
     auto method_it = method_map.find(req.m_Method);
     if (method_it == method_map.end())
     {
-        LOG_WARN(CONFIG_OPTS, std::format("Dispatch: The provided path is not allowed at path: {}", req.m_Path));
+        LOG_WARN( std::format("Dispatch: The provided path is not allowed at path: {}", req.m_Path));
         m_notAllowedHandler(req, res);
         res.set_status_code(http::http_status::MethodNotAllowed);
         return false;
@@ -178,7 +178,6 @@ rt::handler_return_t rt::router::get_handler(
 
     // 5. No matching route
     LOG_WARN(
-        CONFIG_OPTS,
         std::format("Dispatch: The provided path is not found: {}", path)
     );
 
@@ -188,5 +187,5 @@ rt::handler_return_t rt::router::get_handler(
 
 rt::router::~router()
 {
-    LOG_INFO(CONFIG_OPTS, "Terminating Router");
+    LOG_INFO("Terminating Router");
 }

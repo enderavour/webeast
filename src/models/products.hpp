@@ -23,7 +23,7 @@ struct orm::orm_model<products> : orm::orm_model_base<products>
     static constexpr const char *table = "products";
 
     static inline auto columns = std::make_tuple(
-        orm::column("id", &products::id, orm::primary_key),
+        orm::column("id", &products::id, orm::primary_key, orm::autoincrement),
         orm::column("category_id", &products::category_id),
         orm::column("name", &products::name),
         orm::column("description", &products::description),

@@ -10,11 +10,15 @@
 #include <string_view>
 #include <algorithm>
 #include "bind.hpp"
+#include "column.hpp"
+#include "column_name.hpp"
+#include "condition.hpp"
 #include "timestamp.hpp"
 #include "model.hpp"
 #include "foreignkey.hpp"
 #include "../logger.hpp"
 #include "../defaults.hpp"
+#include <iostream>
 
 namespace orm
 {
@@ -56,6 +60,9 @@ std::string make_create_table_sql()
 
                     if (col.primary_key)
                         sql += " PRIMARY KEY";
+
+                    if (col.primary_key && col.autoincrement)
+                        sql += " AUTOINCREMENT";
 
                 }
 
@@ -120,24 +127,27 @@ std::string make_insert_sql()
         (
             [&]
             {
-                if constexpr (!orm::is_timestamp_v<decltype(col)>)
+                if (!orm::is_timestamp_v<decltype(col)>)
                 {
-                    if (!first)
-                        sql += ",";
+                    if (!(col.primary_key && col.autoincrement))
+                    {
+                        if (!first)
+                            sql += ",";
 
-                    sql += col.name;
-                    first = false;
-                    ++count;
+                        sql += col.name;
+                        first = false;
+                        ++count;
+                    }
                 }
+
             }(), ...
         );
     }, orm::orm_model<T>::columns);
 
     sql += ") VALUES (";
 
-    constexpr size_t N = std::tuple_size_v<decltype(orm::orm_model<T>::columns)>;
 
-    for (size_t i = 0; i < N; ++i)
+    for (size_t i = 0; i < count; ++i)
     {
         if (i) sql += ",";
         sql += "?";
@@ -149,15 +159,14 @@ std::string make_insert_sql()
 }
 
 // Queries
-
 template<typename T>
-void insert(sqlite3 *db, const T &obj)
+void insert(sqlite3* db, const T& obj)
 {
-    auto sql = make_insert_sql<T>();
+    const auto sql = make_insert_sql<T>();
 
-    sqlite3_stmt *stmt;
+    sqlite3_stmt* stmt = nullptr;
 
-    sqlite3_prepare_v2(
+    int rc = sqlite3_prepare_v2(
         db,
         sql.c_str(),
         -1,
@@ -165,18 +174,275 @@ void insert(sqlite3 *db, const T &obj)
         nullptr
     );
 
-    bind_object(stmt, obj);
-
-    if (sqlite3_step(stmt) != SQLITE_DONE)
+    if (rc != SQLITE_OK)
     {
-        const std::string error = sqlite3_errmsg(db);
+        throw std::runtime_error(
+            std::string("SQLite prepare failed: ") +
+            sqlite3_errmsg(db) +
+            " | SQL: " + sql
+        );
+    }
 
-        conf::config_opts copts = defaults::CONFIG.get_config_opts();
+    try
+    {
+        bind_object(stmt, obj);
 
-        LOG_ERROR(copts, std::format("Error inserting record to the database: {}", error));
+        rc = sqlite3_step(stmt);
+
+        if (rc != SQLITE_DONE)
+        {
+            throw std::runtime_error(
+                std::string("SQLite insert failed: ") +
+                sqlite3_errmsg(db) +
+                " | SQL: " + sql
+            );
+        }
+
+        const auto rowid = sqlite3_last_insert_rowid(db);
+
+        conf::config_opts copts =
+            defaults::CONFIG.get_config_opts();
+
+        LOG_INFO(
+            std::format(
+                "INSERT succeeded. rowid={}, SQL={}",
+                rowid,
+                sql
+            )
+        );
+    }
+    catch (...)
+    {
+        sqlite3_finalize(stmt);
+        throw;
+    }
+
+    rc = sqlite3_finalize(stmt);
+
+    if (rc != SQLITE_OK)
+    {
+        throw std::runtime_error(
+            std::string("SQLite finalize failed: ") +
+            sqlite3_errmsg(db)
+        );
+    }
+}
+
+// Conditional update
+template<typename T, typename Field, typename Condition>
+int32_t update(
+  sqlite3 *db,
+  const Field &field,
+  const Condition &condition
+) {
+    std::string sql = "UPDATE ";
+    sql += orm::orm_model<T>::table;
+
+    bool first = true;
+
+    sql += " SET ";
+
+    try
+    {
+        std::apply([&sql, &first](const auto&... elems) {
+            (
+                [&](const auto &elem) {
+                    if (!first) {
+                        sql += ", ";
+                    }
+
+                    first = false;
+
+                    auto column_name = orm::column_name(elem.member);
+                    sql += std::format("{} = ?", column_name);
+                }(elems),
+                ...
+            );
+        }, field);
+
+        sql += orm::where_clause(condition);
+    } catch (const std::runtime_error &e)
+    {
+        LOG_ERROR(std::format("update: {}", e.what()));
+        return SQLITE_ERROR;
+    }
+
+    sql += ";";
+
+    sqlite3_stmt *stmt;
+
+    int32_t rc = 0;
+
+    if ((rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr)) != SQLITE_OK)
+    {
+        LOG_ERROR(std::format("update: Error preparing the SQL statement: {}", sqlite3_errmsg(db)));
+        return rc;
+    }
+
+    rc = orm::bind_fields(stmt, field);
+
+    if (rc != SQLITE_OK)
+    {
+        LOG_ERROR(std::format(
+            "update: failed to bind fields: {}",
+            sqlite3_errmsg(db)
+        ));
+        sqlite3_finalize(stmt);
+        return rc;
+    }
+
+    const int32_t where_index = static_cast<int32_t>(std::tuple_size_v<Field>) + 1;
+
+    rc = bind_condition(stmt, condition, where_index);
+
+    if (rc != SQLITE_OK)
+    {
+        LOG_ERROR(std::format("update: failed to bind condition: {}", sqlite3_errmsg(db)));
+        sqlite3_finalize(stmt);
+        return rc;
+    }
+
+    rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE)
+    {
+        LOG_ERROR(std::format("update: Error executing the SQL query: {}", sqlite3_errmsg(db)));
+
+        sqlite3_finalize(stmt);
+        return rc;
     }
 
     sqlite3_finalize(stmt);
+    return SQLITE_OK;
+}
+
+
+// Unconditional update
+template<typename T, typename Field>
+int32_t update(
+  sqlite3 *db,
+  const Field &field
+) {
+    std::string sql = "UPDATE ";
+    sql += orm::orm_model<T>::table;
+    bool first = true;
+
+    sql += " SET ";
+
+    try
+    {
+        std::apply([&sql, &first](const auto&... elems) {
+            (
+                [&](const auto &elem) {
+                    if (!first) {
+                        sql += ", ";
+                    }
+
+                    first = false;
+
+                    auto column_name = orm::column_name(elem.member);
+                    sql += std::format("{} = ?", column_name);
+                }(elems),
+                ...
+            );
+        }, field);
+    } catch (const std::runtime_error &e)
+    {
+        LOG_ERROR(std::format("update: {}", e.what()));
+        return SQLITE_ERROR;
+    }
+
+    if (first)
+    {
+        LOG_ERROR("update: no fields to update");
+        return SQLITE_DONE;
+    }
+
+    sql += ";";
+
+    sqlite3_stmt *stmt = nullptr;
+    int32_t rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+
+    if (rc != SQLITE_OK)
+    {
+        LOG_ERROR(std::format("update: Error preparing the SQL statement: {}", sqlite3_errmsg(db)));
+
+        if (stmt)
+            sqlite3_finalize(stmt);
+
+        return rc;
+    }
+
+    rc = orm::bind_fields(stmt, field);
+
+    if (rc != SQLITE_OK)
+    {
+        LOG_ERROR(std::format(
+            "update: failed to find binds: {}",
+            sqlite3_errmsg(db)
+        ));
+        sqlite3_finalize(stmt);
+        return rc;
+    }
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_DONE)
+    {
+        LOG_ERROR(std::format("update: Error executing the SQL query: {}", sqlite3_errmsg(db)));
+
+        sqlite3_finalize(stmt);
+        return rc;
+    }
+
+    sqlite3_finalize(stmt);
+}
+
+template<typename T, typename Condition>
+bool remove(
+    sqlite3 *db,
+    const Condition &condition
+)
+{
+    std::string sql = " DELETE FROM ";
+
+    sql += orm::orm_model<T>::table;
+    sql += orm::where_clause(condition);
+    sql += ";";
+
+    sqlite3_stmt *stmt = nullptr;
+
+    int32_t rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+
+    if (rc != SQLITE_OK)
+    {
+        LOG_ERROR(std::format("remove: failed to prepare statement: {}", sqlite3_errmsg(db)));
+
+        if (stmt)
+            sqlite3_finalize(stmt);
+
+        return false;
+    }
+
+    orm::bind_condition(stmt, condition, 1);
+
+    if (rc != SQLITE_OK)
+    {
+        LOG_ERROR(std::format("remove: failed to bind condition: {}", sqlite3_errmsg(db)));
+        sqlite3_finalize(stmt);
+        return false;
+    }
+
+    rc = sqlite3_step(stmt);
+
+    if (rc != SQLITE_DONE)
+    {
+        LOG_ERROR(std::format("remove: failed to execute query: {}", sqlite3_errmsg(db)));
+        sqlite3_finalize(stmt);
+        return false;
+    }
+
+    sqlite3_finalize(stmt);
+    return true;
 }
 
 template<typename T>
@@ -196,7 +462,6 @@ T read_column(sqlite3_stmt *stmt, int32_t idx)
         return txt ? reinterpret_cast<const char*>(txt) : "";
     }
 }
-
 
 template<typename T>
 T read_row(sqlite3_stmt *stmt)
@@ -264,7 +529,7 @@ std::vector<T> select_all(sqlite3 *db)
 
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
     {
-        LOG_ERROR(get_config_opts(), std::format("Could not prepare SQL statement: {}", sqlite3_errmsg(db)));
+        LOG_ERROR(std::format("Could not prepare SQL statement: {}", sqlite3_errmsg(db)));
         return {};
     }
 
@@ -284,7 +549,7 @@ std::vector<T> select_all(sqlite3 *db)
         }
         else
         {
-            LOG_ERROR(get_config_opts(), std::format("SQLite step error: {}", sqlite3_errmsg(db)));
+            LOG_ERROR(std::format("SQLite step error: {}", sqlite3_errmsg(db)));
             sqlite3_finalize(stmt);
             return {};
         }
@@ -300,7 +565,7 @@ std::vector<T> select_query(sqlite3 *db, std::string_view sql)
 
     if (sqlite3_prepare_v2(db, sql.data(), -1, &stmt, nullptr) != SQLITE_OK)
     {
-        LOG_ERROR(get_config_opts(), std::format("SQLite select error: {}", sqlite3_errmsg(db)));
+        LOG_ERROR(std::format("SQLite select error: {}", sqlite3_errmsg(db)));
         return {};
     }
 
@@ -319,7 +584,7 @@ std::vector<T> select_query(sqlite3 *db, std::string_view sql)
                 sqlite3_finalize(stmt);
                 return result;
             default:
-                LOG_ERROR(get_config_opts(), std::format("SQLite step error: {}", sqlite3_errmsg(db)));
+                LOG_ERROR(std::format("SQLite step error: {}", sqlite3_errmsg(db)));
                 sqlite3_finalize(stmt);
                 return {};
         }
@@ -340,7 +605,7 @@ void create_table(sqlite3 *db)
     if (sqlite3_exec(db, sql.data(), nullptr, nullptr, &err) != SQLITE_OK)
     {
         std::string msg = err ? err : "Unknown SQL Error";
-        LOG_ERROR(get_config_opts(), std::format("SQLite step error: {}", msg));
+        LOG_ERROR(std::format("SQLite step error: {}", msg));
         sqlite3_free(err);
         return;
     }
@@ -357,7 +622,7 @@ std::vector<T> select_where(sqlite3 *db, std::string_view clause, Args&& ...args
 
     if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
     {
-        LOG_ERROR(get_config_opts(), std::format("Error preparing query: {}", sqlite3_errmsg(db)));
+        LOG_ERROR(std::format("Error preparing query: {}", sqlite3_errmsg(db)));
         return {};
     }
 
@@ -379,7 +644,7 @@ std::vector<T> select_where(sqlite3 *db, std::string_view clause, Args&& ...args
                 return result;
                 break;
             default:
-                LOG_ERROR(get_config_opts(), std::format("Step error: {}", sqlite3_errmsg(db)));
+                LOG_ERROR(std::format("Step error: {}", sqlite3_errmsg(db)));
                 sqlite3_finalize(stmt);
                 return {};
         }

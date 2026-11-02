@@ -14,12 +14,12 @@ sd::static_dir::static_dir() = default;
 sd::static_dir::static_dir(const fs::path &sdir_path):
 static_dir_path(sdir_path)
 {
-    LOG_INFO(CONFIG_OPTS, std::format("Initialized static directory with path: {}", sdir_path.string()));
+    LOG_INFO(std::format("Initialized static directory with path: {}", sdir_path.string()));
 }
 
 void sd::static_dir::set_static_dir_path(const fs::path &sdir_path)
 {
-    LOG_INFO(CONFIG_OPTS, std::format("Instantiated static directory with path: {}", sdir_path.string()));
+    LOG_INFO(std::format("Instantiated static directory with path: {}", sdir_path.string()));
     static_dir_path = sdir_path;
 }
 
