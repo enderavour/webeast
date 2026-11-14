@@ -6,3 +6,4 @@
 /.clangd
 webeast.log
 user.sqlite3
+.env

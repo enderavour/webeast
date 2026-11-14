@@ -29,7 +29,7 @@ public:
         }
 
         // Turn on foreign key check for every connection
-        if (sqlite3_exec(m_Conn, "PRAGMA foreign_keys = ON", nullptr, nullptr, nullptr) != SQLITE_OK)
+        if (sqlite3_exec(m_Conn, "PRAGMA foreign_keys = ON;", nullptr, nullptr, nullptr) != SQLITE_OK)
         {
             std::string err = sqlite3_errmsg(m_Conn);
 
@@ -63,10 +63,10 @@ public:
         return orm::select_all<T>(m_Conn);
     }
 
-    template<typename T, typename ...Args>
-    std::vector<T> select(std::string_view clause, Args&& ...args)
+    template<typename T, typename Condition, typename ...Args>
+    std::vector<T> select(const Condition &condition, Args&& ...args)
     {
-        return orm::select_where<T, Args...>(m_Conn, clause, std::forward<Args>(args)...);
+        return orm::select_where<T, Condition, Args...>(m_Conn, condition, std::forward<Args>(args)...);
     }
 
     template<typename T, typename Field>

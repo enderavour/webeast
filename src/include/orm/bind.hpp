@@ -91,6 +91,22 @@ int32_t bind_condition(
     return orm::bind(stmt, index, cond.value);
 }
 
+template<typename ...Conditions>
+int32_t bind_conditions(sqlite3_stmt *stmt, int32_t index, const Conditions &...conditions)
+{
+    int32_t rc = SQLITE_OK;
+
+    auto bind_one = [&](const auto &cond)
+    {
+        if (rc == SQLITE_OK)
+            rc = orm::bind_condition(stmt, cond, index++);
+    };
+
+    (bind_one(conditions), ...);
+
+    return rc;
+}
+
 template<typename T>
 constexpr const char *get_sqlite_type()
 {

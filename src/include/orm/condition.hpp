@@ -60,6 +60,27 @@ std::string where_clause(
     return sql;
 }
 
+template<typename ...Conditions>
+std::string sequential_where_clause(const Conditions &...conditions)
+{
+    std::string result = "WHERE ";
+
+    bool first = true;
+
+    auto append = [&](const auto &condition)
+    {
+        if (!first)
+            result += " AND ";
+
+        result += orm::where_clause(condition);
+        first = false;
+    };
+
+    (append(conditions), ...);
+
+    return result;
+}
+
 };
 
 #endif

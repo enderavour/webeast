@@ -9,8 +9,12 @@
 #include "models/create.hpp"
 #include "models/products.hpp"
 #include "models/categories.hpp"
+#include "services/include/cart_items.hpp"
+#include "services/include/carts.hpp"
 #include "services/include/product.hpp"
 #include "services/include/categories.hpp"
+#include "include/jwt_service.hpp"
+#include "include/auth_middleware.hpp"
 #include "mocks/categories.hpp"
 #include <atomic>
 #include <format>
@@ -30,6 +34,8 @@ int32_t main()
 
     product_service prod_service(db);
     category_service categ_service(db);
+    carts_service cservice(db);
+    cart_items_service citems_service(db);
 
     for (const categories &category: generate_mock_categories())
         categ_service.create(category);
@@ -48,6 +54,8 @@ int32_t main()
 
         LOG_INFO( std::format("Time elapsed for request: {} us", ms));
     });
+    // JWT middleware
+
 
     // Products
     server.get("/api/products",
@@ -56,8 +64,6 @@ int32_t main()
             http::response_builder<nlohmann::json>& response
         )
         {
-            LOG_INFO("Entered /api/products handler");
-
             auto products = prod_service.get_all();
 
             nlohmann::json result = nlohmann::json::array();
@@ -451,7 +457,9 @@ int32_t main()
             });
         }
     });
+    server.get("/api/cart", [&cservice](const http::request<std::string> &request, http::response_builder<std::string> &response){
 
+    });
     server.get("/greet/{}",
         [](const http::request<std::string> &request, http::response_builder<std::string> &response, boost::smatch &_match)
         {

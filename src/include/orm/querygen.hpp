@@ -229,11 +229,11 @@ void insert(sqlite3* db, const T& obj)
 }
 
 // Conditional update
-template<typename T, typename Field, typename Condition>
+template<typename T, typename Field, typename ...Condition>
 int32_t update(
   sqlite3 *db,
   const Field &field,
-  const Condition &condition
+  const Condition &...condition
 ) {
     std::string sql = "UPDATE ";
     sql += orm::orm_model<T>::table;
@@ -260,7 +260,7 @@ int32_t update(
             );
         }, field);
 
-        sql += orm::where_clause(condition);
+        sql += orm::sequential_where_clause(condition...);
     } catch (const std::runtime_error &e)
     {
         LOG_ERROR(std::format("update: {}", e.what()));
@@ -291,9 +291,9 @@ int32_t update(
         return rc;
     }
 
-    const int32_t where_index = static_cast<int32_t>(std::tuple_size_v<Field>) + 1;
+    int32_t where_index = static_cast<int32_t>(std::tuple_size_v<Field>) + 1;
 
-    rc = bind_condition(stmt, condition, where_index);
+    rc = orm::bind_conditions(stmt, where_index, condition...);
 
     if (rc != SQLITE_OK)
     {
@@ -397,16 +397,16 @@ int32_t update(
     sqlite3_finalize(stmt);
 }
 
-template<typename T, typename Condition>
+template<typename T, typename ...Condition>
 bool remove(
     sqlite3 *db,
-    const Condition &condition
+    const Condition &...condition
 )
 {
     std::string sql = " DELETE FROM ";
 
     sql += orm::orm_model<T>::table;
-    sql += orm::where_clause(condition);
+    sql += orm::sequential_where_clause(condition...);
     sql += ";";
 
     sqlite3_stmt *stmt = nullptr;
@@ -423,7 +423,7 @@ bool remove(
         return false;
     }
 
-    orm::bind_condition(stmt, condition, 1);
+    orm::bind_conditions(stmt, 1, condition...);
 
     if (rc != SQLITE_OK)
     {
@@ -611,12 +611,14 @@ void create_table(sqlite3 *db)
     }
 }
 
-template<typename T, typename ...Args>
-std::vector<T> select_where(sqlite3 *db, std::string_view clause, Args&& ...args)
+template<typename T, typename Condition, typename ...Args>
+std::vector<T> select_where(
+    sqlite3 *db, const Condition &condition, Args&& ...args
+)
 {
     std::string sql = make_select_sql<T>();
     sql += " ";
-    sql += clause;
+    sql += orm::where_clause(condition);
 
     sqlite3_stmt *stmt{};
 

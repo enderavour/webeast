@@ -30,6 +30,7 @@
 - Added schema validation 
 - Implemented POST webpoints 
 - Implemented and tested all HTTP endpoints for products and categories models 
+- Currently adding JWT issuing (the version is not ready for the execution, backup push)
 
 ### TODO
 - Cleanup the code

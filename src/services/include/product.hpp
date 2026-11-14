@@ -1,5 +1,5 @@
-#ifndef PRODUCT_SERVICE_IMPL_HPP
-#define PRODUCT_SERVICE_IMPL_HPP
+#ifndef PRODUCT_SERVICE_IMPL
+#define PRODUCT_SERVICE_IMPL
 
 #include "../../repositories/include/product.hpp"
 #include "../../include/orm/orm.hpp"

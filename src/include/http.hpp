@@ -1,12 +1,14 @@
 #ifndef HTTP_IMPL_H
 #define HTTP_IMPL_H
 
+#include <optional>
 #include <type_traits>
 #include <string>
 #include <map>
 #include <unordered_map>
 #include <boost/url.hpp>
 #include <nlohmann/json.hpp>
+#include "auth_context.hpp"
 
 namespace http
 {
@@ -35,6 +37,7 @@ enum class http_status
     Ok = 200,
     Created = 201,
     BadRequest = 400,
+    Unauthorized = 401,
     NotFound = 404,
     MethodNotAllowed = 405,
     InternalServerError = 500
@@ -51,6 +54,7 @@ struct request
 
     std::map<std::string, std::string> m_Headers;
     std::map<std::string, std::string> m_Params;
+    std::optional<auth_context> m_authContext;
 
     T m_Body;
 };

@@ -1,4 +1,5 @@
 #include "models/create.hpp"
+#include "include/loadsecret.hpp"
 
 void models::create_all_tables(orm::database &db)
 {
