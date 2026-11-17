@@ -11,7 +11,7 @@ std::vector<products> product_repository::select_all()
 std::optional<products> product_repository::select_by_id(int32_t id)
 {
     auto condition = orm::where(&products::id, id);
-    auto matching_products = m_db.select<products>(condition, id);
+    auto matching_products = m_db.select<products>(condition);
     if (matching_products.empty())
         return std::nullopt;
 

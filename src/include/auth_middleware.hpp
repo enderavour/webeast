@@ -15,11 +15,11 @@ public:
     template<typename Request, typename Response, typename Next>
     void operator()(Request &req, Response &resp, Next next)
     {
-        auto authorization = req.headers["Authorization"];
+        auto authorization = req.m_Headers["Authorization"];
 
         if (authorization.empty() || !authorization.starts_with("Bearer "))
         {
-            resp.set_status(http::http_status::Unauthorized);
+            resp.set_status_code(http::http_status::Unauthorized);
             resp.set_body(nlohmann::json{
                 {"error", {
                     {"code", "INVALID_TOKEN"},
@@ -35,7 +35,7 @@ public:
 
         if (!user_id)
         {
-            resp.set_status(http::http_status::Unauthorized);
+            resp.set_status_code(http::http_status::Unauthorized);
             resp.set_body(nlohmann::json{
                 {"error", {
                     {"code", "INVALID_TOKEN"},
@@ -45,7 +45,7 @@ public:
             return;
         }
 
-        req.auth = auth_context{.user_id = user_id.value()};
+        req.m_authContext = auth_context{.user_id = static_cast<int32_t>(user_id.value())};
 
         next();
     }

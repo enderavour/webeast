@@ -16,7 +16,8 @@
 #include "include/jwt_service.hpp"
 #include "include/auth_middleware.hpp"
 #include "mocks/categories.hpp"
-#include <atomic>
+
+#include <dotenv.h>
 #include <format>
 
 #include <chrono>
@@ -27,7 +28,6 @@ static conf::config_opts CONFIG_OPTS = defaults::CONFIG.get_config_opts();
 int32_t main()
 {
     sv::server server("127.0.0.1", 8080);
-    //sd::static_dir static_dir(defaults::STATIC_DIR_PATH);
 
     orm::database db(defaults::DB_PATH);
     models::create_all_tables(db);
@@ -36,6 +36,12 @@ int32_t main()
     category_service categ_service(db);
     carts_service cservice(db);
     cart_items_service citems_service(db);
+
+    dotenv denv("../.env");
+    const std::string jwt_secret = denv.get("JWT_SECRET", "");
+
+    jwt_service jwt(jwt_secret);
+    auth_middleware auth(jwt);
 
     for (const categories &category: generate_mock_categories())
         categ_service.create(category);
@@ -54,8 +60,9 @@ int32_t main()
 
         LOG_INFO( std::format("Time elapsed for request: {} us", ms));
     });
-    // JWT middleware
 
+    // JWT middleware
+    server.use(auth_middleware{auth});
 
     // Products
     server.get("/api/products",

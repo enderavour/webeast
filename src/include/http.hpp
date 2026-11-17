@@ -1,6 +1,7 @@
 #ifndef HTTP_IMPL_H
 #define HTTP_IMPL_H
 
+#include <cstddef>
 #include <optional>
 #include <type_traits>
 #include <string>
@@ -54,9 +55,8 @@ struct request
 
     std::map<std::string, std::string> m_Headers;
     std::map<std::string, std::string> m_Params;
-    std::optional<auth_context> m_authContext;
-
     T m_Body;
+    std::optional<auth_context> m_authContext = std::nullopt;
 };
 
 template<class T>

@@ -10,7 +10,7 @@ std::vector<categories> category_repository::select_all()
 std::optional<categories> category_repository::select_one(int32_t id)
 {
     auto condition = orm::where(&categories::id, id);
-    auto selected_categories = m_db.select<categories>(condition, id);
+    auto selected_categories = m_db.select<categories>(condition);
     if (selected_categories.empty())
         return std::nullopt;
 

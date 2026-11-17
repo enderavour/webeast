@@ -10,7 +10,7 @@ void carts_repository::create(const carts &cart)
 std::optional<carts> carts_repository::get_by_id(int32_t id)
 {
     auto condition = orm::where(&carts::id, id);
-    auto cart = m_db.select<carts>(condition, id);
+    auto cart = m_db.select<carts>(condition);
     if (cart.empty())
         return std::nullopt;
 
@@ -20,7 +20,7 @@ std::optional<carts> carts_repository::get_by_id(int32_t id)
 std::optional<carts> carts_repository::get_by_user_id(int32_t user_id)
 {
     auto condition = orm::where(&carts::user_id, user_id);
-    auto cart = m_db.select<carts>(condition, user_id);
+    auto cart = m_db.select<carts>(condition);
     if (cart.empty())
         return std::nullopt;
 

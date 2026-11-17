@@ -30,7 +30,7 @@ fetchcontent_makeavailable(jwt-cpp)
 
 file(DOWNLOAD
   "https://raw.githubusercontent.com/SermetPekin/dotenv/refs/heads/main/include/dotenv.h"
-  "${CMAKE_CURRENT_SOURCE_DIR}/build/_deps/dotenv.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/build/_deps/dotenv/dotenv.h"
   STATUS DOWNLOAD_STATUS
 )
 
@@ -39,6 +39,8 @@ include_directories(${Boost_INCLUDE_DIR})
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
 add_executable(webeast ${SOURCES})
+
+target_include_directories(webeast PRIVATE "${CMAKE_BINARY_DIR}/_deps/dotenv")
 
 if (WIN32)
 	target_link_libraries(webeast PRIVATE Boost::regex)

@@ -31,10 +31,10 @@ void cart_items_service::update_quantity(int32_t id, int32_t quantity)
 
 bool cart_items_service::remove(int32_t id)
 {
-    c_items_repo.remove(id);
+    return c_items_repo.remove(id);
 }
 
 bool cart_items_service::remove_by_cart_id(int32_t cart_id)
 {
-    c_items_repo.remove_by_cart_id(cart_id);
+    return c_items_repo.remove_by_cart_id(cart_id);
 }

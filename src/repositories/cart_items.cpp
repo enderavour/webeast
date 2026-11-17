@@ -13,7 +13,7 @@ void carts_items_repository::create(const cart_items &item)
 std::optional<cart_items> carts_items_repository::get_by_id(int32_t id)
 {
     auto condition = orm::where(&cart_items::id, id);
-    auto cart_item = m_db.select<cart_items>(condition, id);
+    auto cart_item = m_db.select<cart_items>(condition);
     if (cart_item.empty())
         return std::nullopt;
 
@@ -23,13 +23,13 @@ std::optional<cart_items> carts_items_repository::get_by_id(int32_t id)
 std::vector<cart_items> carts_items_repository::get_by_cart_id(int32_t id)
 {
     auto condition = orm::where(&cart_items::id, id);
-    return m_db.select<cart_items>(condition, id);
+    return m_db.select<cart_items>(condition);
 }
 
 std::optional<cart_items> carts_items_repository::get_by_cart_and_product(int32_t cart_id, int32_t product_id)
 {
-    auto condition_cart = orm::where(&carts::id, cart_id);
-    auto condition_product = orm::where(&products::id, product_id);
+    auto condition_cart = orm::where(&cart_items::cart_id, cart_id);
+    auto condition_product = orm::where(&cart_items::product_id, product_id);
 
     auto result = m_db.select<cart_items>(condition_cart, condition_product);
     if (result.empty())
@@ -44,7 +44,7 @@ void carts_items_repository::update_quantity(int32_t id, int32_t quantity)
 
     auto update_id = orm::where(&cart_items::id, id);
 
-    m_db.update<cart_items>(update_id, fields);
+    m_db.update<cart_items>(fields, update_id);
 }
 
 bool carts_items_repository::remove(int32_t id)

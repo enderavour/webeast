@@ -26,10 +26,16 @@ auto set_field(Member T::* member, Value &&value)
     };
 }
 
-template<typename ...Args>
-auto set(Args&& ...args)
+template<typename T, typename Member, typename Value>
+auto set(Member T::*member, Value &&val)
 {
-    return std::make_tuple(std::forward<Args>(args)...);
+    return set_field<T, Member, Value>(member, val);
+}
+
+template<typename... Fields>
+auto set(Fields &&...fields)
+{
+    return std::make_tuple(std::forward<Fields>(fields)...);
 }
 
 template<typename T, typename Member, typename Value>

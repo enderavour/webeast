@@ -7,6 +7,7 @@
 #include <sqlite3.h>
 #include <type_traits>
 #include <vector>
+#include <tuple>
 #include <string_view>
 #include <algorithm>
 #include "bind.hpp"
@@ -618,7 +619,7 @@ std::vector<T> select_where(
 {
     std::string sql = make_select_sql<T>();
     sql += " ";
-    sql += orm::where_clause(condition);
+    sql += orm::sequential_where_clause(condition);
 
     sqlite3_stmt *stmt{};
 
@@ -629,7 +630,24 @@ std::vector<T> select_where(
     }
 
     int32_t index = 1;
-    (void)std::initializer_list<int32_t>{(bind(stmt, index++, std::forward<Args>(args)), 0)...};
+
+    int32_t rc = bind_conditions(stmt, 1, condition, std::forward<Args>(args)...);
+
+    if (rc != SQLITE_OK)
+    {
+        LOG_ERROR("Error binding first condition");
+        sqlite3_finalize(stmt);
+        return {};
+    }
+
+    rc = bind_conditions(stmt, index, std::forward<Args>(args)...);
+
+    if (rc != SQLITE_OK)
+    {
+        LOG_ERROR("Error binding options");
+        sqlite3_finalize(stmt);
+        return {};
+    }
 
     std::vector<T> result;
     while (true)
